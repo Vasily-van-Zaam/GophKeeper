@@ -1,8 +1,12 @@
 package cryptor
 
 import (
+	"encoding/hex"
+	"encoding/json"
 	"log"
 	"testing"
+
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 )
 
 func Test_encript_GetVersionHash(t *testing.T) {
@@ -33,6 +37,9 @@ func Test_encript_GetVersionHash(t *testing.T) {
 			e := &criptor{}
 			got, err := e.GetVersionHash(tt.args.b)
 
+			a := []byte("31ef4e54dd72993d2cb4a16433b58220d5a91a1510a78b7534469c3242d12f75950574e50d3c9e62e9ba5c9f025e377fb5b29f")
+
+			log.Println(a, "HELLO12345"[0])
 			log.Println(got, err)
 			// log.Println(string(file))
 			// if (err != nil) != tt.wantErr {
@@ -48,7 +55,7 @@ func Test_encript_GetVersionHash(t *testing.T) {
 
 func Test_criptor_Encrypt(t *testing.T) {
 	type args struct {
-		hash string
+		hash []byte
 		data []byte
 	}
 	tests := []struct {
@@ -59,19 +66,16 @@ func Test_criptor_Encrypt(t *testing.T) {
 	}{
 		{
 			args: args{
-				hash: "hellopasswor",
+				hash: []byte("7815b03fcc6ca456d185ac2d8a3ea7fc16c2c363192bfe8984e7b147bc94493ab8c753e85d9190d034493f5c1c7d451f0c690b7549599c6f3f6708b12899ec12193514d176941d42b11aef147c55b32bc2e32cb7221886e9b8b82406f7d1a5520689db7fd591f6e65398fc8286047b4f47f65ff83d31b63e17a38dd363b32c252ecec5f08178c7d0e08d85f0b502d2f7ffbe05f32204267331a225a3c68793250d35252422ae0d34f801bd0328ca393822c622571fc5af0156663fec88c1f4e3b9daafecb30e5ce72600968729e8c59270cdc95243474204598b1113860688811cfa27321b2ee0c98a45916b72583b3ef806f70f10f290ca75a8f4a3836789d6d9a43feee28597a47b50f7b5659c0cb4e7be8fbe46eaaccfc4e6b84cb6a5569d5cf08785aa15d40f9f40af1c2a746fb5f0235c3aba8010239097f3a5876ae49e59d01be4120acb73875cf5b12f1a34cff19186d1d938f247dba9ad3e0b99e64551b943f0aebc1127262d7c669a8ceea4c2b78b95384780f24e71b518f9ac2ec000260265ed1da30cffa796df2d8df73f25d1598d01433180a7c83d5990523f7c8e21012dc2559017f6e6b891a32a2eef572e3581144b472b52d9b455f519ac03689f2d8afa230c2741f1151b2380f3260"),
 				data: []byte(longText),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := New("secret-key122223833383838383839283982039820398098sdsdsdsddssdsd22")
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			got, err := c.Encrypt(tt.args.hash, tt.args.data)
+			c := New()
+
+			got, _ := c.Encrypt(tt.args.hash, tt.args.data)
 			// c, err = New("secret-key122223833383838383839283982039820398098sdsdsdsddssdsd22")
 			// if err != nil {
 			// 	log.Println(err)
@@ -79,7 +83,7 @@ func Test_criptor_Encrypt(t *testing.T) {
 			// }
 			got2, err2 := c.Decrypt(tt.args.hash, got)
 
-			log.Println(string(got), err)
+			log.Println(hex.EncodeToString(got))
 			log.Println(string(got2), err2)
 			// if (err != nil) != tt.wantErr {
 
@@ -217,3 +221,52 @@ var longText = `
 В XX веке библиотекари столкнулись с проблемой отслеживания того множества книг, которое каждый год выпускалось по всему миру. В связи с этим Международная федерация библиотечных ассоциаций и учреждений разработала несколько инструментов для решения данной проблемы, и в том числе — международное стандартное библиографическое описание (ISBD). В соответствии с ним, каждому изданию присваивается международный стандартный книжный номер — ISBN. ISBN, соответственно, является уникальным идентификатором для каждого издания книги, произведённого в любой стране мира, если издатель принимает этот стандарт. Поддержкой системы занимается специальное сообщество ISBN. Идентификатор состоит из четырёх частей[36]:
 
 `
+
+var userKey = "123456789"
+
+// var cryptedUserKey = "c37296f96c42f8f46b5b2ebb3727d3789d7a3836905b51ef1ab0d2da30af7d7195ff97c573f7e59830e3e60a0451f0fea71c0060be9990cb56b697f4a5820062b3e4bd544bce6a5cf046796e1134d1f5422d1f7bdd2dc907dc2ac21856ac973d728aa88165f68dbf2a4fcfb4041f458b90c7ae5742353f4117c7620369317be4c1da79cc380119e8c42171f3dff28d5f5434f68292bf493bb69161543f7b5537b6fd50c6f5edb8cd23bcad0972a863681c6fdcb957678b653c8c3b8b84a7e9b8dd8a3804dc7bfb8546c791092c94ef9ecad7696a223252042502715097f0fcecca57bf77389ca1e6d69e850e38b9800a67d10bfb0c30bcfdec870ae14a4169717f4e435922ff0fb2ddbbca8a4d165afccdad37628ee91338f29c578bf9762179b8f1754e63197e924cc806e4149eb766f6fe7dbae1b7be0e0400a976baa8a5fec88f0bf88590d3d68f791b901d23e713f9346bb8568b82590f0b0df35594d0a70059f70a54691930240b371d0207ac16dc7fd6a04d28bb994dd475a25236b9cc35cb5a8c5202817bb844689dfca309c159e22728a72913ca200d2efe737d8c7092d5a4383f28714479f445a0c3491151a06c216226f429c6e2adc97cf535d00c58a31a3ed08f69fa9c7af229c3d13c92871f29f6914ee31490c449fdacd2b30e24fa0f1079a108f3b1b6da6ce650e768978c834f4da471d6a4913596a0e9904c2c203b9ab1e467d1c4ab6bccb7c735019e9fd59388a9419426f4982e"
+
+func TestGenerateRandom(t *testing.T) {
+	type args struct {
+		size int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		{
+			args: args{
+				size: 12,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// nonce, _ := GenerateRandom(tt.args.size)
+			mPasword := "mater-pawordwwwww"
+			pw := core.PasswordForm{
+				Password: "password",
+				Login:    "mail@maio.ru",
+				Resource: "https://googl.com",
+			}
+			bpw, _ := json.Marshal(pw)
+			cr := &criptor{}
+			cryptedUserKey, _ := cr.Encrypt([]byte(mPasword), []byte(userKey))
+			log.Println(hex.EncodeToString(cryptedUserKey))
+			dataMPsw, err := cr.Decrypt([]byte(mPasword), cryptedUserKey)
+
+			log.Println(string(dataMPsw))
+			log.Println(err)
+
+			cryptedData, _ := cr.Encrypt(dataMPsw, bpw)
+			log.Println(hex.EncodeToString(cryptedData))
+			data, err := cr.Decrypt(dataMPsw, cryptedData)
+			resPsw := core.PasswordForm{}
+			json.Unmarshal(data, &resPsw)
+			log.Println(resPsw)
+			log.Println(err)
+		})
+	}
+}

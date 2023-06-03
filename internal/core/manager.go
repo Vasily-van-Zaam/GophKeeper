@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func setVersionHash(b []byte) string {
@@ -15,48 +13,6 @@ func setVersionHash(b []byte) string {
 	hash.Write(b)
 	res := fmt.Sprintf("%x", hash.Sum(nil))
 	return res
-}
-
-type DataType string
-
-const (
-	DataTypePassword DataType = "password"
-	DataTypeCard     DataType = "card"
-	DataTypeText     DataType = "text"
-	DataTypeFile     DataType = "file"
-)
-
-// The InfoData for saving.
-type InfoData struct {
-	ID       *uuid.UUID `json:"id"`
-	DataType string     `json:"data_type"`
-	MetaData string     `json:"meta_data"`
-	UserID   *uuid.UUID `json:"user_id"`
-	// /*
-	// 	hash + updated_at is version changed
-	// 	If the hash is not equal to the new hash,
-	// 	then the version has changed.
-	// 	The update date will be prompted to the client to choose which
-	// 	version to keep in the central repository
-	// */
-	Hash      string     `json:"hash"`
-	UpdatedAt *time.Time `json:"updated_at"`
-	CreatedAt *time.Time `json:"created_at"`
-}
-
-// The password manager for create a new password or display.
-type PasswordForm struct {
-	Password string `json:"value"`
-	Login    string `json:"login"`    // login, email, phone
-	Resource string `json:"resource"` // link site or application
-}
-
-// The bank card form for create a new bank card or display.
-type BankCardFomm struct {
-	Number     string `json:"number"`
-	Date       string `json:"date"`
-	CVC        string `json:"cvc"`
-	ClientName string `json:"client_name"`
 }
 
 // The data manager model for saving.
@@ -68,12 +24,53 @@ type manager struct {
 	encryptor Encryptor
 }
 
+// ToData implements Manager.
+func (d *manager) ToData() (*ManagerData, error) {
+	if d.data == nil {
+		return nil, errors.New("data is nil")
+	}
+	if d.infoData == nil {
+		return nil, errors.New("infoData is nil")
+	}
+	return &ManagerData{
+		Data:     *d.data,
+		InfoData: *d.infoData,
+	}, nil
+}
+
 type setter struct {
 	data *manager
 }
 
+func (s *setter) isCreating() bool {
+	if s.data != nil {
+		if s.data.infoData != nil {
+			if s.data.infoData.CreatedAt != nil {
+				return false
+			}
+		}
+	}
+	return true
+}
+func (s *setter) setData(masterPsw string, dType DataType, d []byte) error {
+	bs, err := s.data.encryptor.Encrypt([]byte(masterPsw), d)
+	if err != nil {
+		return err
+	}
+	nowTime := time.Now().UTC()
+
+	s.data.infoData.UpdatedAt = &nowTime
+	if s.isCreating() {
+		s.data.infoData.CreatedAt = &nowTime
+	}
+	s.data.infoData.Hash = setVersionHash(d)
+	s.data.infoData.DataType = string(dType)
+	s.data.data = &bs
+	return nil
+}
+
 // BankCard implements Setter.
-func (s *setter) BankCard(hash string, card *BankCardFomm) error {
+func (s *setter) BankCard(masterPsw string, card *BankCardFomm) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
@@ -81,18 +78,11 @@ func (s *setter) BankCard(hash string, card *BankCardFomm) error {
 	if err != nil {
 		return err
 	}
-	bs, err := s.data.encryptor.Encrypt(hash, d)
-	if err != nil {
-		return err
-	}
-	s.data.infoData.Hash = setVersionHash(d)
-	s.data.infoData.DataType = string(DataTypeCard)
-	s.data.data = &bs
-	return nil
+	return s.setData(masterPsw, DataTypeCard, d)
 }
 
 // Password implements Setter.
-func (s *setter) Password(hash string, psw *PasswordForm) error {
+func (s *setter) Password(masterPsw string, psw *PasswordForm) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
@@ -100,45 +90,24 @@ func (s *setter) Password(hash string, psw *PasswordForm) error {
 	if err != nil {
 		return err
 	}
-	bs, err := s.data.encryptor.Encrypt(hash, d)
-	if err != nil {
-		return err
-	}
-	s.data.infoData.Hash = setVersionHash(d)
-	s.data.infoData.DataType = string(DataTypePassword)
-	s.data.data = &bs
-	return nil
+	return s.setData(masterPsw, DataTypePassword, d)
 }
 
 // Text implements Setter.
-func (s *setter) Text(hash string, text string) error {
+func (s *setter) Text(masterPsw string, text string) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
 	d := []byte(text)
-	bs, err := s.data.encryptor.Encrypt(hash, d)
-	if err != nil {
-		return err
-	}
-	s.data.infoData.Hash = setVersionHash(d)
-	s.data.infoData.DataType = string(DataTypeText)
-	s.data.data = &bs
-	return nil
+	return s.setData(masterPsw, DataTypeText, d)
 }
 
 // Data implements Setter.
-func (s *setter) Data(hash string, data []byte) error {
+func (s *setter) Data(masterPsw string, data []byte) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
-	bs, err := s.data.encryptor.Encrypt(hash, data)
-	if err != nil {
-		return err
-	}
-	s.data.infoData.Hash = setVersionHash(data)
-	s.data.infoData.DataType = string(DataTypeFile)
-	s.data.data = &bs
-	return nil
+	return s.setData(masterPsw, DataTypeText, data)
 }
 
 // MetaData implements Setter.
@@ -151,12 +120,17 @@ type getter struct {
 	data *manager
 }
 
+// EncryptData implements Getter.
+func (g *getter) EncryptData() []byte {
+	return *g.data.data
+}
+
 // Data implements Getter.
-func (g *getter) Data(hash string) ([]byte, error) {
+func (g *getter) Data(masterPsw string) ([]byte, error) {
 	if g.data.encryptor == nil {
 		return nil, errors.New("need add encrypter")
 	}
-	bs, err := g.data.encryptor.Decrypt(hash, *g.data.data)
+	bs, err := g.data.encryptor.Decrypt([]byte(masterPsw), *g.data.data)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +159,7 @@ func (d *manager) Set() Setter {
 }
 
 // Create new manager for store.
-func NewData() Manager {
+func NewManager() Manager {
 	data := &manager{
 		infoData: &InfoData{},
 	}
@@ -195,14 +169,15 @@ func NewData() Manager {
 	data.setter = &setter{
 		data: data,
 	}
+
 	return data
 }
 
 // Create manager form storage.
-func NewDataFrom(info *InfoData, data []byte) Manager {
+func NewManagerFromData(data *ManagerData) Manager {
 	d := &manager{
-		infoData: info,
-		data:     &data,
+		infoData: &data.InfoData,
+		data:     &data.Data,
 	}
 	d.getter = &getter{
 		data: d,
@@ -210,6 +185,5 @@ func NewDataFrom(info *InfoData, data []byte) Manager {
 	d.setter = &setter{
 		data: d,
 	}
-	d.data = &data
 	return d
 }

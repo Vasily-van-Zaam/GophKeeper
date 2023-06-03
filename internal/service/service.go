@@ -10,16 +10,19 @@ import (
 )
 
 type Store interface {
-	GetData(ctx context.Context, userID string, types ...string) ([]core.Manager, error)
-	// GetDataById(ctx context.Context, id string) ([]core.Manager, error)
-	// GetDataByMeta(ctx context.Context, userID string, types ...string) ([]core.Manager, error)
-	AddData(ctx context.Context, data core.Manager) error
-	ChangeData(ctx context.Context, data ...core.Manager) (int, error)
+	GetUserByEmail(ctx context.Context, email string) (*core.User, error)
+	AddUser(ctx context.Context, user *core.User) (*core.User, error)
+	ChangeUser(ctx context.Context, user *core.User) (*core.User, error)
+	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
+	AddData(ctx context.Context, data *core.ManagerData) error
+	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 }
 type Service interface {
-	GetData(ctx context.Context, types ...core.DataType) ([]core.Manager, error)
-	AddData(ctx context.Context, data core.Manager) error
-	ChangeData(ctx context.Context, data ...core.Manager) (int, error)
+	Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error)
+	Registration(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error)
+	GetData(ctx context.Context, types ...core.DataType) ([]*core.ManagerData, error)
+	AddData(ctx context.Context, data *core.ManagerData) error
+	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 }
 
 type service struct {
@@ -28,17 +31,27 @@ type service struct {
 }
 
 // AddData implements Service.
-func (*service) AddData(ctx context.Context, data core.Manager) error {
+func (*service) AddData(ctx context.Context, data *core.ManagerData) error {
 	panic("unimplemented")
 }
 
 // ChangeData implements Service.
-func (*service) ChangeData(ctx context.Context, data ...core.Manager) (int, error) {
+func (*service) ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error) {
 	panic("unimplemented")
 }
 
 // GetData implements Service.
-func (*service) GetData(ctx context.Context, types ...core.DataType) ([]core.Manager, error) {
+func (*service) GetData(ctx context.Context, types ...core.DataType) ([]*core.ManagerData, error) {
+	panic("unimplemented")
+}
+
+// Login implements Service.
+func (*service) Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error) {
+	panic("unimplemented")
+}
+
+// Registration implements Service.
+func (*service) Registration(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error) {
 	panic("unimplemented")
 }
 

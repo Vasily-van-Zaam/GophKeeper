@@ -5,23 +5,18 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/sha512"
-	"fmt"
 )
 
-// Implements encrip interface!
-type Encript interface {
-	GetVersionHash(b []byte) (string, error)
+// Implements encript interface!
+type Encryptor interface {
 	Encrypt(secret []byte, userData []byte) ([]byte, error)
 	Decrypt(secret []byte, data []byte) ([]byte, error)
 }
 
-type criptor struct {
-	aesgcm *cipher.AEAD
-}
+type cryptor struct{}
 
 // Encrypt user key.
-func (c *criptor) Encrypt(secret []byte, userData []byte) ([]byte, error) {
+func (c *cryptor) Encrypt(secret []byte, userData []byte) ([]byte, error) {
 	hash := sha256.New()
 	hash.Write(secret)
 	k := hash.Sum(nil)
@@ -34,7 +29,7 @@ func (c *criptor) Encrypt(secret []byte, userData []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	nonce, err := GenerateRandom(aesgcm.NonceSize())
+	nonce, err := generateRandom(aesgcm.NonceSize())
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +43,7 @@ func (c *criptor) Encrypt(secret []byte, userData []byte) ([]byte, error) {
 }
 
 // Decrypt user key.
-func (criptor) Decrypt(secret []byte, data []byte) ([]byte, error) {
+func (cryptor) Decrypt(secret []byte, data []byte) ([]byte, error) {
 	hash := sha256.New()
 	hash.Write(secret)
 	k := hash.Sum(nil)
@@ -69,21 +64,13 @@ func (criptor) Decrypt(secret []byte, data []byte) ([]byte, error) {
 	return decryptedData, nil
 }
 
-// GetVersionHash implements Encript.
-func (*criptor) GetVersionHash(b []byte) (string, error) {
-	hash := sha512.New()
-	hash.Write(b)
-	res := fmt.Sprintf("%x", hash.Sum(nil))
-
-	return string(res), nil
-}
-
-func New() Encript {
-	return &criptor{}
+// Create new encryption.
+func New() Encryptor {
+	return &cryptor{}
 }
 
 // Generate Random.
-func GenerateRandom(size int) ([]byte, error) {
+func generateRandom(size int) ([]byte, error) {
 	b := make([]byte, size)
 	_, err := rand.Read(b)
 	if err != nil {

@@ -24,7 +24,9 @@ func TestNew(t *testing.T) {
 		{
 			name: "new store",
 			want: &store{
-				data: &core.DataGob{},
+				data:     &core.DataGob{},
+				filePath: "datastore",
+				config:   config.New(logg),
 			},
 			config: config.New(logg),
 		},
@@ -134,20 +136,29 @@ func Test_store_GetData(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "store_get_data found user2",
+			name: "store_get_data found user2 with types",
 			fields: fields{
 				data: &core.DataGob{
 					DataList: []*core.ManagerData{
 						{
 							Data: nil,
 							InfoData: core.InfoData{
-								UserID: &userID1,
+								UserID:   &userID1,
+								DataType: string(core.DataTypeText),
 							},
 						},
 						{
 							Data: nil,
 							InfoData: core.InfoData{
-								UserID: &userID2,
+								UserID:   &userID2,
+								DataType: string(core.DataTypeText),
+							},
+						},
+						{
+							Data: nil,
+							InfoData: core.InfoData{
+								UserID:   &userID2,
+								DataType: string(core.DataTypeCard),
 							},
 						},
 					},
@@ -156,12 +167,21 @@ func Test_store_GetData(t *testing.T) {
 			args: args{
 				ctx:    context.Background(),
 				userID: userID2.String(),
+				types:  []string{string(core.DataTypeCard), string(core.DataTypeText)},
 			},
 			want: []*core.ManagerData{
 				{
 					Data: nil,
 					InfoData: core.InfoData{
-						UserID: &userID2,
+						UserID:   &userID2,
+						DataType: string(core.DataTypeText),
+					},
+				},
+				{
+					Data: nil,
+					InfoData: core.InfoData{
+						UserID:   &userID2,
+						DataType: string(core.DataTypeCard),
 					},
 				},
 			},
@@ -197,8 +217,9 @@ func Test_store_GetData(t *testing.T) {
 
 func Test_store_AddData(t *testing.T) {
 	type fields struct {
-		data *core.DataGob
+		config config.Config
 	}
+	userID1 := uuid.New()
 	type args struct {
 		ctx  context.Context
 		data *core.ManagerData
@@ -210,19 +231,48 @@ func Test_store_AddData(t *testing.T) {
 		want    *core.ManagerData
 		wantErr bool
 	}{
-		{},
+		{
+			name: "add new data",
+			fields: fields{
+				config: config.New(logger.New()),
+			},
+			args: args{
+				ctx: context.Background(),
+				data: &core.ManagerData{
+					Data: []byte("some data bytes"),
+					InfoData: core.InfoData{
+						MetaData: "some text",
+						UserID:   &userID1,
+					},
+				},
+			},
+			want: &core.ManagerData{
+				Data: []byte("some data bytes"),
+				InfoData: core.InfoData{
+					MetaData: "some text",
+					UserID:   &userID1,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &store{
-				data: tt.fields.data,
+			err := os.Remove(tt.fields.config.Client().FilePath())
+			if err != nil {
+				log.Println(err)
+			}
+			s, err := New(tt.fields.config)
+			if err != nil {
+				t.Errorf("store.AddData() = err %v", err)
+				return
 			}
 			got, err := s.AddData(tt.args.ctx, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("store.AddData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			tt.want.ID = got.ID
+			if !reflect.DeepEqual(got, tt.want) && got.ID != nil {
 				t.Errorf("store.AddData() = %v, want %v", got, tt.want)
 			}
 		})
@@ -268,6 +318,111 @@ func Test_store_saveToFile(t *testing.T) {
 			}
 			if err := s.saveToFile(); (err != nil) != tt.wantErr {
 				t.Errorf("store.saveToFile() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func Test_store_SearchData(t *testing.T) {
+	type fields struct {
+		data     *core.DataGob
+		filePath string
+		config   config.Config
+	}
+	userID1 := uuid.New()
+	userID2 := uuid.New()
+	type args struct {
+		ctx    context.Context
+		search string
+		userID string
+		types  []string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []*core.ManagerData
+		wantErr bool
+	}{
+		{
+			name: "search data 'some text'",
+			fields: fields{
+				data: &core.DataGob{
+					DataList: []*core.ManagerData{
+						{
+							Data: nil,
+							InfoData: core.InfoData{
+								UserID:   &userID1,
+								MetaData: "hello world",
+								DataType: string(core.DataTypeText),
+							},
+						},
+						{
+							Data: nil,
+							InfoData: core.InfoData{
+								UserID:   &userID1,
+								MetaData: "new text for search",
+								DataType: string(core.DataTypeText),
+							},
+						},
+						{
+							Data: nil,
+							InfoData: core.InfoData{
+								UserID:   &userID2,
+								MetaData: "some text user 2",
+								DataType: string(core.DataTypeText),
+							},
+						},
+						{
+							Data: nil,
+							InfoData: core.InfoData{
+								UserID:   &userID1,
+								MetaData: "some text user 1",
+								DataType: string(core.DataTypeText),
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				ctx:    context.Background(),
+				userID: userID1.String(),
+				types:  []string{string(core.DataTypeText)},
+				search: "some",
+			},
+			want: []*core.ManagerData{
+				{
+					Data: nil,
+					InfoData: core.InfoData{
+						UserID:   &userID1,
+						MetaData: "some text user 1",
+						DataType: string(core.DataTypeText),
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &store{
+				data:     tt.fields.data,
+				filePath: tt.fields.filePath,
+				config:   tt.fields.config,
+			}
+			got, err := s.SearchData(tt.args.ctx, tt.args.search, tt.args.userID, tt.args.types...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("store.SearchData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				for _, g := range got {
+					log.Print(g)
+				}
+				for _, g := range tt.want {
+					log.Print(g)
+				}
+				t.Errorf("store.SearchData() = %v, want %v", got, tt.want)
 			}
 		})
 	}

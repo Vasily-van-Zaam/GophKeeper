@@ -5,16 +5,11 @@ package server.proto;
 
 option go_package = "server/proto";
 
-message Login {
-    string login = 1;
-    string password  = 2;
+message SecretToken {
+    bytes token = 1;
 }
 
-message Connection {
-    
-}
-
-message UserLoginForm {
+message UserLoginFormRequest {
     string email = 1;
     string password = 2;
 }

@@ -95,3 +95,6 @@ type BankCardFomm struct {
 func (m *ManagerData) ToManager() Manager {
 	return NewManagerFromData(m)
 }
+
+type SyncInfo struct {
+}

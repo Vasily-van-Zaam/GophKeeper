@@ -65,6 +65,7 @@ type InfoData struct {
 	DataType string     `json:"data_type"`
 	MetaData string     `json:"meta_data"`
 	UserID   *uuid.UUID `json:"user_id"`
+	Local    bool       `json:"local"`
 	// /*
 	// 	hash + updated_at is version changed
 	// 	If the hash is not equal to the new hash,

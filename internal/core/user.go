@@ -12,11 +12,12 @@ type User struct {
 }
 
 type UserProfile struct {
-	FirrsName string `json:"firrs_name"`
-	LastName  string `json:"last_name"`
-	Age       string `json:"age"`
-	Sex       string `json:"sex"`
-	Email     string `json:"email"`
+	FirrsName      string `json:"firrs_name"`
+	LastName       string `json:"last_name"`
+	Age            string `json:"age"`
+	Sex            string `json:"sex"`
+	Email          string `json:"email"`
+	EmailConfirmed bool   `json:"email_confirmed"`
 }
 
 // User Login form for authenticated.
@@ -25,8 +26,14 @@ type LoginForm struct {
 	Pasword string `json:"pasword"`
 }
 
+type RegistrationAccept struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
 // AuthToken access + refrech token for authenticated.
 type AuthToken struct {
-	Access  string `json:"access"`
-	Refresh string `json:"refresh"`
+	Access  []byte `json:"access"`
+	Refresh []byte `json:"refresh"`
+	UserKey []byte `json:"eser_key"`
 }

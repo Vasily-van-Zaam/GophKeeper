@@ -1,15 +1,135 @@
-//protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=./  --go-grpc_opt=paths=source_relative ./internal/transport/grpc/server.proto
 syntax = "proto3";
 
-package server.proto;
+package grpc.server;
 
-option go_package = "server/proto";
+option go_package = "grpc/server";
 
-message SecretToken {
-    bytes token = 1;
-}
 
-message UserLoginFormRequest {
+// # REQUEST
+// Login request
+message LoginRequest {
     string email = 1;
     string password = 2;
 }
+// # RESPOSE
+// Login respoinse 
+message LoginResponse {
+    bytes access = 1;
+    bytes refresh = 2;
+    bytes userKey = 3;
+    string error = 4;
+}
+
+
+// # REQUEST
+// Registration Request
+message RegistrationRequest {
+    string email = 1;
+    string password = 2;
+}
+
+// # RESPOSE
+//Registration respoinse
+message RegistrationResponse {
+    string hash = 1;
+    string error = 2;
+}
+
+message ResetPasswordRequest {
+    string email = 1;
+}
+message ResetPasswordAccepdRequest {
+    string email = 1;
+    string code = 2;
+}
+message ResetPasswordResponse {
+    string error = 2;
+}
+
+// # REQUEST
+// Registration accept request
+message RegistrationAcceptRequest {
+    string email = 1;
+    string code = 2;
+}
+
+// # RESPOSE
+// Registration accept respose
+message RegistrationAcceptResponse {
+    string error = 1;
+}
+
+// ManagerData
+message ManagerData {
+    string ID = 1;
+	string DataType = 2;
+	string MetaData = 3;
+	string UserID = 4;
+	bool Local = 5;
+   
+	string Hash  = 6;
+	string UpdatedAt = 7;
+	string CreatedAt  = 8;
+    bytes Data = 9;
+}
+
+// # REQUEST
+// Add data
+message AddNewDataRequest {
+    repeated ManagerData list = 1;
+}
+// # RESPONSE
+message AddNewDataResponse {
+    int32 added = 1;
+    string error = 2;
+}
+
+// # REQUEST
+message GetDataRequest {
+    repeated string DataTypes = 1;
+    string meta = 2;
+
+}
+// # RESPONSE
+message GetDataResponse {
+    repeated ManagerData list = 1;
+    string error = 2;
+}
+// # REQUEST
+// Sync request
+message SyncDataRequst {}
+
+// Checking data
+message CheckData {
+    string ID = 1;
+	string Hash  = 2;
+}
+// # REQUEST
+// Request checking data
+message CheckChangesDataRequest {
+    repeated CheckData list = 1;
+}
+
+// # RESPONSE
+// Request checking data
+// 
+message CheckChangesDataResponse {
+    repeated CheckData list = 1;
+    string error = 2;
+}
+
+
+
+service Grpc {
+    rpc Login(LoginRequest) returns (LoginResponse);
+    rpc Registration(RegistrationRequest) returns (RegistrationResponse);
+    rpc RegistrationAccept(RegistrationAcceptRequest) returns (RegistrationAcceptResponse);
+    rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+    rpc ResetPasswordAccepd(ResetPasswordAccepdRequest) returns (ResetPasswordResponse);
+
+    rpc CheckChangesData(CheckChangesDataRequest) returns (CheckChangesDataResponse);
+    rpc AddNewData(AddNewDataRequest) returns (AddNewDataResponse);
+    rpc GetData(GetDataRequest) returns (GetDataResponse);
+}
+
+//protoc --go_out=. --go_opt=paths=source_relative  --go-grpc_out=./  --go-grpc_opt=paths=source_relative ./internal/transport/grpc/server.proto

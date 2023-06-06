@@ -220,6 +220,14 @@ func Test_store_AddData(t *testing.T) {
 		config config.Config
 	}
 	userID1 := uuid.New()
+
+	data := core.ManagerData{
+		Data: []byte("some data bytes"),
+		InfoData: core.InfoData{
+			MetaData: "some text",
+			UserID:   &userID1,
+		},
+	}
 	type args struct {
 		ctx  context.Context
 		data *core.ManagerData
@@ -228,7 +236,7 @@ func Test_store_AddData(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    *core.ManagerData
+		want    []*core.ManagerData
 		wantErr bool
 	}{
 		{
@@ -246,12 +254,8 @@ func Test_store_AddData(t *testing.T) {
 					},
 				},
 			},
-			want: &core.ManagerData{
-				Data: []byte("some data bytes"),
-				InfoData: core.InfoData{
-					MetaData: "some text",
-					UserID:   &userID1,
-				},
+			want: []*core.ManagerData{
+				&data,
 			},
 		},
 	}
@@ -271,8 +275,8 @@ func Test_store_AddData(t *testing.T) {
 				t.Errorf("store.AddData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			tt.want.ID = got.ID
-			if !reflect.DeepEqual(got, tt.want) && got.ID != nil {
+			tt.want[0].ID = got[0].ID
+			if !reflect.DeepEqual(got, tt.want) && got[0].ID != nil {
 				t.Errorf("store.AddData() = %v, want %v", got, tt.want)
 			}
 		})

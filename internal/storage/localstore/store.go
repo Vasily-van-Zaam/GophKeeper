@@ -24,7 +24,7 @@ type Store interface {
 
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
-	AddData(ctx context.Context, data *core.ManagerData) (*core.ManagerData, error)
+	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 }
 
@@ -52,13 +52,16 @@ func (s *store) SearchData(
 }
 
 // AddData implements Store.
-func (s *store) AddData(ctx context.Context, data *core.ManagerData) (*core.ManagerData, error) {
+func (s *store) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error) {
 	if data == nil {
 		return nil, errors.New("data is nil")
 	}
 	newID := uuid.New()
-	data.ID = &newID
-	s.data.DataList = append(s.data.DataList, data)
+
+	for _, d := range data {
+		d.ID = &newID
+	}
+	s.data.DataList = append(s.data.DataList, data...)
 	err := s.saveToFile()
 	if err != nil {
 		return nil, err

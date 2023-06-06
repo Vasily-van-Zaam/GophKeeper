@@ -1,20 +1,21 @@
 package main
 
 import (
-	"log"
-	"net"
-
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/service"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/storage/localstore"
+	server "github.com/Vasily-van-Zaam/GophKeeper.git/internal/transport/grpc"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
 )
 
 func main() {
 	logg := logger.New()
 	logg.Info("Server working")
+	conf := config.New(logg)
+	localstore.New(conf)
+	service.New(logg, cryptor.New())
+	server.New(logg)
 
-	listener, err := net.Listen("tcp", "0.0.0.0:8080")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer listener.Close()
 	// conn, err := listener.Accept()
 }

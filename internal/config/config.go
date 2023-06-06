@@ -20,15 +20,33 @@ type Logger interface {
 type Config interface {
 	Client() ClientConfig
 	Logger() Logger
+	Server() ServerConfig
 }
 
 type ClientConfig interface {
 	FilePath() string
 }
 
+type ServerConfig interface {
+	GetSecretKey(version string) string
+}
+type serverConfig struct {
+	SecretKeys map[string]string `env:"`
+}
+
+// GetSecretKey implements ServerConfig.
+func (*serverConfig) GetSecretKey(version string) string {
+	panic("unimplemented")
+}
+
 type configs struct {
 	client ClientConfig
 	logger Logger
+}
+
+// Server implements Config.
+func (*configs) Server() ServerConfig {
+	return &serverConfig{}
 }
 
 // Logger implements Config.
@@ -63,5 +81,6 @@ func New(logger Logger) Config {
 	return &configs{
 		client: newClientConfig(),
 		logger: logger,
+		// server:
 	}
 }

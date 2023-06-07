@@ -12,21 +12,23 @@ import (
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type userMockService struct {
 }
 
 func (s *userMockService) Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error) {
-
+	data, ok := metadata.FromIncomingContext(ctx)
+	log.Println(data, ok)
 	return &core.AuthToken{
 		Access:  []byte("access"),
 		Refresh: []byte("refresh"),
-		UserKey: []byte("user_kay"),
+		UserKey: []byte("user_key"),
 	}, nil // errors.New("error login")
 }
-func (s *userMockService) Registration(ctx context.Context, form *core.LoginForm) (string, error) {
-	return "", nil
+func (s *userMockService) Registration(ctx context.Context, form *core.LoginForm) (*string, error) {
+	return nil, nil
 }
 func (s *userMockService) RegistrationAccept(ctx context.Context, form *core.LoginForm) error {
 	return nil
@@ -39,7 +41,7 @@ func Test_server_Login(t *testing.T) {
 		UnimplementedGrpcServer UnimplementedGrpcServer
 		config                  config.Config
 		user                    UserService
-		service                 Service
+		service                 ManagerService
 		listener                net.Listener
 	}
 
@@ -71,7 +73,7 @@ func Test_server_Login(t *testing.T) {
 			want: &LoginResponse{
 				Access:  []byte("access"),
 				Refresh: []byte("refresh"),
-				UserKey: []byte("user_kay"),
+				UserKey: []byte("user_key"),
 			},
 		},
 	}
@@ -88,6 +90,8 @@ func Test_server_Login(t *testing.T) {
 			defer conn.Close()
 			c := NewGrpcClient(conn)
 			ctx := context.Background()
+			md := metadata.New(map[string]string{"client_version": "0.0.1"})
+			ctx = metadata.NewOutgoingContext(context.Background(), md)
 			got, err := c.Login(ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("server.Login() error = %v, wantErr %v", err, tt.wantErr)

@@ -3,10 +3,14 @@ package service
 import (
 	"context"
 
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 )
 
 type userService struct {
+	config  *config.Config
+	store   UserStore
+	criptor core.Encryptor
 }
 
 // RegistrationAccept implements UserService.
@@ -24,6 +28,10 @@ func (*userService) Registration(ctx context.Context, form *core.LoginForm) (*st
 	panic("unimplemented")
 }
 
-func NewUserService() UserService {
-	return &userService{}
+func NewUserService(conf config.Config, store UserStore, cr core.Encryptor) UserService {
+	return &userService{
+		config:  &conf,
+		store:   store,
+		criptor: cr,
+	}
 }

@@ -13,8 +13,13 @@ type service struct {
 	config    config.Config
 }
 
+// SearchData implements Service.
+func (*service) SearchData(ctx context.Context, search string, types ...string) ([]*core.ManagerData, error) {
+	panic("unimplemented")
+}
+
 // AddData implements Service.
-func (*service) AddData(ctx context.Context, data *core.ManagerData) error {
+func (*service) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error) {
 	panic("unimplemented")
 }
 

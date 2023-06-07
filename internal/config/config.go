@@ -28,20 +28,28 @@ type ClientConfig interface {
 }
 
 type ServerConfig interface {
-	GetSecretKey(version string) string
+	SecretKey(version string) string
+	RunAddrss() string
 }
 type serverConfig struct {
-	SecretKeys map[string]string `env:"`
+	SecretKeys map[string]string `env:"server_secret_keys" envDefault:"0.0.0:secret_key_version_0.0.0,0.0.1:secret_key_version_0.0.1"`
+	RunAddress string            `env:"server_run_address" envDefault:":3200"`
+}
+
+// RunAddrss implements ServerConfig.
+func (c *serverConfig) RunAddrss() string {
+	return c.RunAddress
 }
 
 // GetSecretKey implements ServerConfig.
-func (*serverConfig) GetSecretKey(version string) string {
-	panic("unimplemented")
+func (c *serverConfig) SecretKey(version string) string {
+	return c.SecretKeys[version]
 }
 
 type configs struct {
 	client ClientConfig
 	logger Logger
+	server ServerConfig
 }
 
 // Server implements Config.
@@ -60,7 +68,7 @@ func (c *configs) Client() ClientConfig {
 }
 
 type clientConfig struct {
-	LocalstorePath string `env:"localstore_path" envDefault:"datastore"`
+	LocalstorePath string `env:"client_localstore_path" envDefault:"datastore"`
 }
 
 // Get localstore file path.
@@ -75,12 +83,20 @@ func newClientConfig() ClientConfig {
 	}
 	return &cfg
 }
+func newServerConfig() ServerConfig {
+	cfg := serverConfig{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Printf("%+v\n", err)
+	}
+	return &cfg
+}
 
 // Create new config.
 func New(logger Logger) Config {
-	return &configs{
+	conf := &configs{
 		client: newClientConfig(),
 		logger: logger,
-		// server:
+		server: newServerConfig(),
 	}
+	return conf
 }

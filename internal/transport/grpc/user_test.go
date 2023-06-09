@@ -34,7 +34,7 @@ func (s *userMockService) RegistrationAccept(ctx context.Context, form *core.Log
 	return nil
 }
 
-const addresPort = ":3200"
+const addresPort = "localhost:3200"
 
 func Test_server_Login(t *testing.T) {
 	type fields struct {
@@ -79,8 +79,8 @@ func Test_server_Login(t *testing.T) {
 	}
 
 	srv := New(f.config, f.user, f.service)
-
-	go srv.Run(addresPort)
+	log.Println(srv)
+	// go srv.Run(addresPort)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			conn, err := grpc.Dial(addresPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -90,23 +90,29 @@ func Test_server_Login(t *testing.T) {
 			defer conn.Close()
 			c := NewGrpcClient(conn)
 			ctx := context.Background()
-			md := metadata.New(map[string]string{"client_version": "0.0.1"})
+			md := metadata.New(map[string]string{"client_version": "0.1.1"})
 			ctx = metadata.NewOutgoingContext(context.Background(), md)
 			got, err := c.Login(ctx, tt.args.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("server.Login() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(got.Access, tt.want.Access) {
+				t.Errorf("server.Login() = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got.Refresh, tt.want.Refresh) {
+				t.Errorf("server.Login() = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got.UserKey, tt.want.UserKey) {
 				t.Errorf("server.Login() = %v, want %v", got, tt.want)
 			}
 			log.Printf("stop server")
 		})
 	}
-	defer func() {
-		err := srv.Stop()
-		if err != nil {
-			log.Println(err)
-		}
-	}()
+	// defer func() {
+	// 	err := srv.Stop()
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
+	// }()
 }

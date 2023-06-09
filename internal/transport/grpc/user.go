@@ -2,8 +2,11 @@ package server
 
 import (
 	context "context"
+	"strings"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 func (srv *server) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
@@ -15,7 +18,10 @@ func (srv *server) Login(ctx context.Context, req *LoginRequest) (*LoginResponse
 		Pasword: req.Password,
 	})
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), "not found") {
+			return nil, status.Errorf(codes.PermissionDenied, "incorrect login or password")
+		}
+		return nil, status.Errorf(codes.PermissionDenied, err.Error())
 	}
 	resp = &LoginResponse{
 		Access:  res.Access,

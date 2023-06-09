@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/gdamore/tcell/v2 v2.6.0
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/rivo/tview v0.0.0-20230511053024-822bd067b165
 	github.com/testcontainers/testcontainers-go v0.20.1

@@ -53,11 +53,6 @@ func (*store) GetSecretToken(ctx context.Context, userID string) ([]byte, error)
 	panic("unimplemented")
 }
 
-// GetUserByEmail implements Store.
-func (*store) GetUserByEmail(ctx context.Context, email string) (*core.User, error) {
-	panic("unimplemented")
-}
-
 // SearchData implements Store.
 func (*store) SearchData(ctx context.Context, search string, userID string, types ...string) ([]*core.ManagerData, error) {
 	panic("unimplemented")

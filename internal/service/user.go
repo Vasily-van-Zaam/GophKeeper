@@ -2,9 +2,12 @@ package service
 
 import (
 	"context"
+	"errors"
+	"log"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"google.golang.org/grpc/metadata"
 )
 
 type userService struct {
@@ -19,8 +22,27 @@ func (*userService) RegistrationAccept(ctx context.Context, form *core.LoginForm
 }
 
 // Login implements UserService.
-func (*userService) Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error) {
-	panic("unimplemented")
+func (s *userService) Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error) {
+	var (
+		err  error
+		user *core.User
+	)
+	data, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("err metadata")
+	}
+
+	data.Get("")
+	user, err = s.store.GetUserByEmail(ctx, form.Email)
+	if err != nil {
+		return nil, err
+	}
+	log.Println(user, err)
+	return &core.AuthToken{
+		Access:  []byte("access"),
+		Refresh: []byte("refresh"),
+		UserKey: []byte("user_key"),
+	}, nil
 }
 
 // Registration implements UserService.

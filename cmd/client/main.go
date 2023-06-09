@@ -1,8 +1,17 @@
 package main
 
 import (
+	"context"
+	"log"
+
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/app"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	server "github.com/Vasily-van-Zaam/GophKeeper.git/internal/transport/grpc"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 var states = []string{"AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DC", "DE", "FL", "GA",
@@ -38,6 +47,7 @@ func main() {
 		setConcatText(&contacts[index])
 	})
 	bl := tview.NewModal()
+
 	bl.SetRect(10, 0, 1, 1)
 	// bl.SetFullScreen(true)
 	b := tview.NewButton("OK")
@@ -47,9 +57,9 @@ func main() {
 	})
 	bl.AddButtons([]string{"ss", "sss"})
 	bl.GetDrawFunc()
-	// b.SetRect(0, 0, 10, 10)
-	// b.SetBackgroundColor(tcell.ColorLawnGreen)
-	// b.SetBorderColor(tcell.ColorLawnGreen)
+	b.SetRect(0, 0, 10, 10)
+	b.SetBackgroundColor(tcell.ColorLawnGreen)
+	b.SetBorderColor(tcell.ColorLawnGreen)
 	// b.SetStyle(tcell.Style{
 	// 	bg: tcell.ColorLawnGreen,
 	// })
@@ -65,14 +75,33 @@ func main() {
 			application.Stop()
 		} else if event.Rune() == 97 {
 			form.Clear(true)
-			addContactForm()
+
 			pages.SwitchToPage("Add Contact")
 		}
 		return event
 	})
 
 	pages.AddPage("Menu", flex, true, true)
-	pages.AddPage("Add Contact", bl, true, false)
+	pages.AddPage("Add Contact", app.NewFormLogin(func(form *core.LoginForm) {
+		conn, err := grpc.Dial(":3200", grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer conn.Close()
+
+		c := server.NewGrpcClient(conn)
+		ctx := context.Background()
+		md := metadata.New(map[string]string{"client_version": "0.1.1"})
+		ctx = metadata.NewOutgoingContext(context.Background(), md)
+		got, err := c.Login(ctx, &server.LoginRequest{
+			Email:    form.Email,
+			Password: form.Pasword,
+		})
+
+		log.Println(got, err)
+	}, func() {
+		pages.SwitchToPage("Menu")
+	}), true, false)
 
 	if err := application.SetRoot(pages, true).EnableMouse(true).Run(); err != nil {
 		panic(err)

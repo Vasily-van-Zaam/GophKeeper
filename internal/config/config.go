@@ -30,10 +30,21 @@ type ClientConfig interface {
 type ServerConfig interface {
 	SecretKey(version string) string
 	RunAddrss() string
+	Expires(name ...bool) int
 }
 type serverConfig struct {
-	SecretKeys map[string]string `env:"server_secret_keys" envDefault:"0.0.0:secret_key_version_0.0.0,0.0.1:secret_key_version_0.0.1"`
-	RunAddress string            `env:"server_run_address" envDefault:":3200"`
+	SecretKeys        map[string]string `env:"server_secret_keys" envDefault:"0.0.0:secret_key_version_0.0.0,0.0.1:secret_key_version_0.0.1"`
+	RunAddress        string            `env:"server_run_address" envDefault:":3200"`
+	AccessExpiresMin  int               `env:"access_expires_min" envDefault:"10"`
+	RefreshExpiresMin int               `env:"refresh_expires_min" envDefault:"43200"`
+}
+
+// Expires implements ServerConfig.
+func (c *serverConfig) Expires(isRefresh ...bool) int {
+	if len(isRefresh) > 0 && isRefresh[0] {
+		return c.RefreshExpiresMin
+	}
+	return c.AccessExpiresMin
 }
 
 // RunAddrss implements ServerConfig.
@@ -53,8 +64,8 @@ type configs struct {
 }
 
 // Server implements Config.
-func (*configs) Server() ServerConfig {
-	return &serverConfig{}
+func (c *configs) Server() ServerConfig {
+	return c.server
 }
 
 // Logger implements Config.

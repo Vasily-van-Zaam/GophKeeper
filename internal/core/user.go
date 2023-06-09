@@ -35,5 +35,5 @@ type RegistrationAccept struct {
 type AuthToken struct {
 	Access  []byte `json:"access"`
 	Refresh []byte `json:"refresh"`
-	UserKey []byte `json:"eser_key"`
+	UserKey []byte `json:"userKey"`
 }

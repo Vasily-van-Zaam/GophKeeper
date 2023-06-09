@@ -5,8 +5,16 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"log"
+
+	"time"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"github.com/golang-jwt/jwt"
+
+	"google.golang.org/grpc/metadata"
 )
 
 type Store interface {
@@ -33,4 +41,30 @@ type UserService interface {
 	Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error)
 	Registration(ctx context.Context, form *core.LoginForm) (*string, error)
 	RegistrationAccept(ctx context.Context, form *core.LoginForm) error
+}
+
+func (s *service) handlerAuth(ctx context.Context, user *core.User) (*core.AuthToken, error) {
+	data, ok := metadata.FromIncomingContext(ctx)
+	md := ctx.Value("client_version")
+	log.Println(md)
+	if !ok {
+		return nil, errors.New("err metadata")
+	}
+	vesion := data.Get("client_version")
+	if len(vesion) == 0 {
+		return nil, errors.New("err metadata client version")
+	}
+	claims := jwt.MapClaims{
+		"email":  user.Email,
+		"userID": fmt.Sprint(user.ID),
+		"exp":    time.Now().Add(time.Hour * time.Duration(s.config.Server().Expires())).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	ts, err := token.SignedString([]byte(s.config.Server().SecretKey(vesion[0])))
+	if err != nil {
+		return nil, err
+	}
+	return &core.AuthToken{
+		Access: []byte(ts),
+	}, nil
 }

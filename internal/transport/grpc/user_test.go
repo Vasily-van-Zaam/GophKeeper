@@ -9,6 +9,7 @@ import (
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -47,7 +48,7 @@ func Test_server_Login(t *testing.T) {
 
 	f := fields{
 		UnimplementedGrpcServer: UnimplementedGrpcServer{},
-		config:                  config.New(logger.New()),
+		config:                  config.New(logger.New(), cryptor.New()),
 		user:                    &userMockService{},
 		service:                 nil,
 		listener:                nil,

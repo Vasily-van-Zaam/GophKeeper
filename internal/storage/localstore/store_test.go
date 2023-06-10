@@ -9,12 +9,14 @@ import (
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
 	"github.com/google/uuid"
 )
 
 func TestNew(t *testing.T) {
 	logg := logger.New()
+	crypt := cryptor.New()
 	tests := []struct {
 		name    string
 		config  config.Config
@@ -26,15 +28,15 @@ func TestNew(t *testing.T) {
 			want: &store{
 				data:     &core.DataGob{},
 				filePath: "datastore",
-				config:   config.New(logg),
+				config:   config.New(logg, crypt),
 			},
-			config: config.New(logg),
+			config: config.New(logg, crypt),
 		},
 		{
 			name:    "new store error",
 			want:    &store{},
 			wantErr: true,
-			config:  config.New(logg),
+			config:  config.New(logg, crypt),
 		},
 	}
 	for _, tt := range tests {
@@ -216,6 +218,7 @@ func Test_store_GetData(t *testing.T) {
 }
 
 func Test_store_AddData(t *testing.T) {
+	crypt := cryptor.New()
 	type fields struct {
 		config config.Config
 	}
@@ -242,7 +245,7 @@ func Test_store_AddData(t *testing.T) {
 		{
 			name: "add new data",
 			fields: fields{
-				config: config.New(logger.New()),
+				config: config.New(logger.New(), crypt),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -284,6 +287,7 @@ func Test_store_AddData(t *testing.T) {
 }
 
 func Test_store_saveToFile(t *testing.T) {
+	crypt := cryptor.New()
 	type fields struct {
 		data     *core.DataGob
 		filePath string
@@ -308,7 +312,7 @@ func Test_store_saveToFile(t *testing.T) {
 						},
 					},
 				},
-				config:   config.New(logger.New()),
+				config:   config.New(logger.New(), crypt),
 				filePath: "test_store_save_to_file",
 			},
 		},

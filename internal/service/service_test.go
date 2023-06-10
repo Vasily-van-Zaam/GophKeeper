@@ -9,6 +9,7 @@ import (
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
 	"google.golang.org/grpc/metadata"
 )
@@ -47,6 +48,7 @@ func Test_service_GetData(t *testing.T) {
 }
 
 func Test_service_handlerAuth(t *testing.T) {
+	crypt := cryptor.New()
 	type fields struct {
 		store     Store
 		encriptor core.Encryptor
@@ -65,7 +67,7 @@ func Test_service_handlerAuth(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				config: config.New(logger.New()),
+				config: config.New(logger.New(), crypt),
 			},
 			args: args{
 				ctx: context.Background(),
@@ -86,7 +88,8 @@ func Test_service_handlerAuth(t *testing.T) {
 
 			md := metadata.New(map[string]string{})
 			md.Set("client_version", "0.0.1")
-			ctx := metadata.NewOutgoingContext(tt.args.ctx, md)
+
+			ctx := metadata.NewIncomingContext(tt.args.ctx, md)
 
 			got, err := s.handlerAuth(ctx, tt.args.user)
 			if (err != nil) != tt.wantErr {

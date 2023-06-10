@@ -9,6 +9,11 @@ import (
 	"github.com/caarlos0/env/v7"
 )
 
+type Encryptor interface {
+	Encrypt(secret []byte, userData []byte) ([]byte, error)
+	Decrypt(secret []byte, data []byte) ([]byte, error)
+}
+
 type Logger interface {
 	Info(args ...any)
 	Error(args ...any)
@@ -21,6 +26,7 @@ type Config interface {
 	Client() ClientConfig
 	Logger() Logger
 	Server() ServerConfig
+	Encryptor() Encryptor
 }
 
 type ClientConfig interface {
@@ -30,7 +36,9 @@ type ClientConfig interface {
 type ServerConfig interface {
 	SecretKey(version string) string
 	RunAddrss() string
-	Expires(name ...bool) int
+	// isRefresh == true  then the refresh  expiration date is returned
+	// if true, then the access expiration date is returned
+	Expires(isRefresh ...bool) int
 }
 type serverConfig struct {
 	SecretKeys        map[string]string `env:"server_secret_keys" envDefault:"0.0.0:secret_key_version_0.0.0,0.0.1:secret_key_version_0.0.1"`
@@ -58,9 +66,15 @@ func (c *serverConfig) SecretKey(version string) string {
 }
 
 type configs struct {
-	client ClientConfig
-	logger Logger
-	server ServerConfig
+	client  ClientConfig
+	logger  Logger
+	server  ServerConfig
+	cryptor Encryptor
+}
+
+// Encryptor implements Config.
+func (c *configs) Encryptor() Encryptor {
+	return c.cryptor
 }
 
 // Server implements Config.
@@ -94,20 +108,30 @@ func newClientConfig() ClientConfig {
 	}
 	return &cfg
 }
-func newServerConfig() ServerConfig {
+
+// newServerConfig("0.0.0", "privite_tserver_token") - for client
+// newServerConfig()  - for server from env data.
+func newServerConfig(vToken ...string) ServerConfig {
 	cfg := serverConfig{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Printf("%+v\n", err)
 	}
+	if len(vToken) == 2 {
+		cfg.SecretKeys[vToken[0]] = vToken[1]
+	}
+
 	return &cfg
 }
 
 // Create new config.
-func New(logger Logger) Config {
+// New(logger, crypt) - for server
+// New(logger, crypt, "0.0.0", "sprivate_server_token") - for client.
+func New(logger Logger, crypt Encryptor, vToken ...string) Config {
 	conf := &configs{
-		client: newClientConfig(),
-		logger: logger,
-		server: newServerConfig(),
+		client:  newClientConfig(),
+		logger:  logger,
+		server:  newServerConfig(vToken...),
+		cryptor: crypt,
 	}
 	return conf
 }

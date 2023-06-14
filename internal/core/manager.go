@@ -18,7 +18,7 @@ func setVersionHash(b []byte) string {
 // The data manager model for saving.
 type manager struct {
 	infoData  *InfoData
-	data      *[]byte // encrypted
+	data      []byte // encrypted
 	setter    Setter
 	getter    Getter
 	encryptor Encryptor
@@ -33,7 +33,7 @@ func (d *manager) ToData() (*ManagerData, error) {
 		return nil, errors.New("infoData is nil")
 	}
 	return &ManagerData{
-		Data:     *d.data,
+		Data:     d.data,
 		InfoData: *d.infoData,
 	}, nil
 }
@@ -65,7 +65,7 @@ func (s *setter) setData(masterPsw string, dType DataType, d []byte) error {
 	}
 	s.data.infoData.Hash = setVersionHash(d)
 	s.data.infoData.DataType = string(dType)
-	s.data.data = &bs
+	s.data.data = bs
 	return nil
 }
 
@@ -122,7 +122,7 @@ type getter struct {
 
 // EncryptData implements Getter.
 func (g *getter) EncryptData() []byte {
-	return *g.data.data
+	return g.data.data
 }
 
 // Data implements Getter.
@@ -130,7 +130,10 @@ func (g *getter) Data(masterPsw string) ([]byte, error) {
 	if g.data.encryptor == nil {
 		return nil, errors.New("need add encrypter")
 	}
-	bs, err := g.data.encryptor.Decrypt([]byte(masterPsw), *g.data.data)
+	if g.data.data == nil {
+		return nil, errors.New("data is nil")
+	}
+	bs, err := g.data.encryptor.Decrypt([]byte(masterPsw), g.data.data)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +180,7 @@ func NewManager() Manager {
 func NewManagerFromData(data *ManagerData) Manager {
 	d := &manager{
 		infoData: &data.InfoData,
-		data:     &data.Data,
+		data:     data.Data,
 	}
 	d.getter = &getter{
 		data: d,

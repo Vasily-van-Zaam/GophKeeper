@@ -12,21 +12,22 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func Test_authenticated_CreateToken(t *testing.T) {
+func Test_authenticated_EncryptDeecryptData(t *testing.T) {
 	crypt := cryptor.New()
 	type fields struct {
 		config config.Config
 	}
 	type args struct {
-		ctx     context.Context
-		user    *User
-		version string
+		ctx             context.Context
+		user            *User
+		version         string
+		versionOnClient string
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		args    args
-		wantLen int
+		want    *User
 		wantErr bool
 	}{
 		{
@@ -35,14 +36,20 @@ func Test_authenticated_CreateToken(t *testing.T) {
 				config: config.New(logger.New(), crypt),
 			},
 			args: args{
-				ctx:     context.Background(),
-				version: "0.0.1",
+				ctx:             context.Background(),
+				version:         "0.0.1",
+				versionOnClient: "0.0.1",
 				user: &User{
-					Email: "test@email.com",
-					ID:    "123456789",
+					Email:      "test@email.com",
+					ID:         "123456789",
+					PrivateKey: "privatePrivateKey",
 				},
 			},
-			wantLen: 195,
+			want: &User{
+				Email:      "test@email.com",
+				ID:         "123456789",
+				PrivateKey: "privatePrivateKey",
+			},
 		},
 		{
 			name: "test_version_config_data_0.0.0",
@@ -50,14 +57,20 @@ func Test_authenticated_CreateToken(t *testing.T) {
 				config: config.New(logger.New(), crypt),
 			},
 			args: args{
-				ctx:     context.Background(),
-				version: "0.0.0",
+				ctx:             context.Background(),
+				version:         "0.0.0",
+				versionOnClient: "0.0.0",
 				user: &User{
-					Email: "test@email.com",
-					ID:    "123456789",
+					Email:      "test@email.com",
+					ID:         "123456789",
+					PrivateKey: "privatePrivateKey",
 				},
 			},
-			wantLen: 195,
+			want: &User{
+				Email:      "test@email.com",
+				ID:         "123456789",
+				PrivateKey: "privatePrivateKey",
+			},
 		},
 		{
 			name: "test_error_config_data",
@@ -83,58 +96,28 @@ func Test_authenticated_CreateToken(t *testing.T) {
 			md.Set("client_version", tt.args.version)
 			ctx := metadata.NewIncomingContext(tt.args.ctx, md)
 
-			got, err := a.CreateToken(ctx, tt.args.user)
+			got, err := a.EncryptData(ctx, tt.args.user)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("authenticated.CreateToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if len(got) != tt.wantLen {
-				t.Errorf("authenticated.CreateToken() = %v, want %v", len(got), tt.wantLen)
-			}
-		})
-	}
-}
 
-func Test_authenticated_GetDataFromToken(t *testing.T) {
-	type fields struct {
-		config config.Config
-	}
-	type args struct {
-		ctx   context.Context
-		token []byte
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *User
-		wantErr bool
-	}{
-		{
-			fields: fields{
-				config: config.New(logger.New(), cryptor.New()),
-			},
-			args: args{
-				ctx:   context.Background(),
-				token: []byte("token"),
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			a := NewAuth(tt.fields.config)
-			md := metadata.New(map[string]string{})
-			md.Set("client_version", "0.0.0")
-			md.Set("token", hex.EncodeToString(tt.args.token))
-
-			ctx := metadata.NewIncomingContext(tt.args.ctx, md)
-			got, err := a.GetDataFromToken(ctx)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("authenticated.GetDataFromToken() error = %v, wantErr %v", err, tt.wantErr)
+			md.Set("client_version", tt.args.versionOnClient)
+			md.Set("token", hex.EncodeToString(got))
+			if got == nil && tt.wantErr {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("authenticated.GetDataFromToken() = %v, want %v", got, tt.want)
+			ctx = metadata.NewIncomingContext(context.Background(), md)
+			var user User
+			got1 := a.DecryptByContextData(ctx, &user)
+			if (got1 != nil) != tt.wantErr {
+				t.Errorf("authenticated.GetDataFromToken() error = %v, wantErr %v", got1, tt.wantErr)
+				return
+			}
+
+			if !reflect.DeepEqual(&user, tt.want) {
+				t.Errorf("authenticated.CreateToken() authenticated.GetDataFromToken() = %v, want %v", user, tt.want)
 			}
 		})
 	}

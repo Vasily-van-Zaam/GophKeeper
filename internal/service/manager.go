@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	"google.golang.org/grpc/metadata"
 )
 
 type service struct {
@@ -29,8 +31,15 @@ func (*service) ChangeData(ctx context.Context, data ...*core.ManagerData) (int,
 }
 
 // GetData implements Service.
-func (*service) GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error) {
-	panic("unimplemented")
+func (s *service) GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error) {
+	data, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("err metadata")
+	}
+	data.Get("user")
+
+	// s.store.GetData(ctx, ...types)
+	return nil, nil
 }
 
 func New(conf config.Config, store Store, encript core.Encryptor) Service {

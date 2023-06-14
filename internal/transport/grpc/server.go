@@ -19,9 +19,8 @@ type ManagerService interface {
 }
 
 type UserService interface {
-	Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error)
-	Registration(ctx context.Context, form *core.LoginForm) (*string, error)
-	RegistrationAccept(ctx context.Context, form *core.LoginForm) error
+	GetAccess(ctx context.Context, form *core.AccessForm) ([]byte, error)
+	ConfirmAccess(ctx context.Context, form *core.AccessForm) (*core.User, error)
 }
 
 // Ranner.
@@ -36,6 +35,7 @@ type server struct {
 	user     UserService
 	service  ManagerService
 	listener net.Listener
+	auth     core.Auth
 }
 
 func New(conf config.Config, u UserService, m ManagerService) runner {
@@ -43,6 +43,7 @@ func New(conf config.Config, u UserService, m ManagerService) runner {
 		config:  conf,
 		user:    u,
 		service: m,
+		auth:    core.NewAuth(conf),
 	}
 }
 
@@ -68,20 +69,20 @@ func (srv *server) Stop() error {
 func (srv *server) unaryInterceptor(
 	ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	var token string
+	// var token string
 	var clientVersion string
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
 		values := md.Get("token")
 		client := md.Get("client_version")
 		if len(values) > 0 {
-			token = values[0]
+			// token = values[0]
 		}
 		if len(client) > 0 {
 			clientVersion = client[0]
 		}
 	}
-	log.Println("===", token)
+	// log.Println("===", token)
 	// if len(token) == 0 {
 	// 	return nil, status.Error(codes.Unauthenticated, "missing token")
 	// }

@@ -14,7 +14,7 @@ import (
 func main() {
 	logg := logger.New()
 	logg.Info("Server working")
-	conf := config.New(logg)
+	conf := config.New(logg, cryptor.New())
 	store, err := pstgql.New(conf)
 	if err != nil {
 		log.Fatal(err)

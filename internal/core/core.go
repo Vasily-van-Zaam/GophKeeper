@@ -9,6 +9,12 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	CtxVersionClientKey = "client_version"
+	CtxTokenKey         = "token"
+	CtxAcceptToken      = "acept_token"
+)
+
 type Encryptor interface {
 	Encrypt(secret []byte, userData []byte) ([]byte, error)
 	Decrypt(secret []byte, data []byte) ([]byte, error)
@@ -47,6 +53,7 @@ const (
 	DataTypeCard     DataType = "card"
 	DataTypeText     DataType = "text"
 	DataTypeFile     DataType = "file"
+	DataTypeUser     DataType = "user"
 )
 
 type DataGob struct {

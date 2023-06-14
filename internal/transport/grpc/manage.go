@@ -29,3 +29,9 @@ func (srv *server) GetData(ctx context.Context, req *GetDataRequest) (*GetDataRe
 
 	return resp, nil
 }
+
+func (srv *server) Ping(ctx context.Context, req *PingRequest) (*PingResponse, error) {
+	return &PingResponse{
+		Ok: true,
+	}, nil
+}

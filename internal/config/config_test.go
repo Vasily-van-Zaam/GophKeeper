@@ -5,7 +5,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"reflect"
 	"testing"
 
@@ -40,9 +39,9 @@ func TestNew(t *testing.T) {
 			addr := conf.Server().RunAddrss()
 			v000 := conf.Server().SecretKey("0.0.0")
 			v001 := conf.Server().SecretKey("0.0.1")
-			v002 := conf.Server().SecretKey("0.0.2")
+			// v002 := conf.Server().SecretKey("0.0.2")
 			got := fmt.Sprintf("%v, %v, %v, %v, %v, %v", path, refresh, access, addr, v000, v001)
-			log.Println(v002)
+			// log.Println(v002)
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("New() = %v, want %v", got, tt.want)

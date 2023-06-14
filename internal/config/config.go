@@ -4,8 +4,6 @@
 package config
 
 import (
-	"log"
-
 	"github.com/caarlos0/env/v7"
 )
 
@@ -31,6 +29,8 @@ type Config interface {
 
 type ClientConfig interface {
 	FilePath() string
+	Version() string
+	SrvAddress() string
 }
 
 type ServerConfig interface {
@@ -94,6 +94,13 @@ func (c *configs) Client() ClientConfig {
 
 type clientConfig struct {
 	LocalstorePath string `env:"client_localstore_path" envDefault:"datastore"`
+	ServerAddress  string `env:"server_address" envDefault:":3200"`
+	version        string
+}
+
+// Version implements ClientConfig.
+func (c *clientConfig) Version() string {
+	return c.version
 }
 
 // Get localstore file path.
@@ -101,22 +108,33 @@ func (c *clientConfig) FilePath() string {
 	return c.LocalstorePath
 }
 
-func newClientConfig() ClientConfig {
+// Get server address.
+func (c *clientConfig) SrvAddress() string {
+	return c.ServerAddress
+}
+
+func newClientConfig(versions ...string) ClientConfig {
+	version := "0.0.0"
+	if len(versions) != 0 {
+		version = versions[0]
+	}
 	cfg := clientConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Printf("%+v\n", err)
+		// log.Printf("%+v\n", err)
 	}
+	cfg.version = version
 	return &cfg
 }
 
 // newServerConfig("0.0.0", "privite_tserver_token") - for client
 // newServerConfig()  - for server from env data.
 func newServerConfig(vToken ...string) ServerConfig {
+	const lenVt = 2
 	cfg := serverConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		log.Printf("%+v\n", err)
+		// log.Printf("%+v\n", err)
 	}
-	if len(vToken) == 2 {
+	if len(vToken) == lenVt {
 		cfg.SecretKeys[vToken[0]] = vToken[1]
 	}
 
@@ -127,8 +145,12 @@ func newServerConfig(vToken ...string) ServerConfig {
 // New(logger, crypt) - for server
 // New(logger, crypt, "0.0.0", "sprivate_server_token") - for client.
 func New(logger Logger, crypt Encryptor, vToken ...string) Config {
+	version := "0.0.0"
+	if len(vToken) > 0 {
+		version = vToken[0]
+	}
 	conf := &configs{
-		client:  newClientConfig(),
+		client:  newClientConfig(version),
 		logger:  logger,
 		server:  newServerConfig(vToken...),
 		cryptor: crypt,

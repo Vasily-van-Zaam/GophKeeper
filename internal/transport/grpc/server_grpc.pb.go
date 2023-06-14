@@ -19,25 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Grpc_Login_FullMethodName               = "/grpc.server.Grpc/Login"
-	Grpc_Registration_FullMethodName        = "/grpc.server.Grpc/Registration"
-	Grpc_RegistrationAccept_FullMethodName  = "/grpc.server.Grpc/RegistrationAccept"
-	Grpc_ResetPassword_FullMethodName       = "/grpc.server.Grpc/ResetPassword"
-	Grpc_ResetPasswordAccepd_FullMethodName = "/grpc.server.Grpc/ResetPasswordAccepd"
-	Grpc_CheckChangesData_FullMethodName    = "/grpc.server.Grpc/CheckChangesData"
-	Grpc_AddNewData_FullMethodName          = "/grpc.server.Grpc/AddNewData"
-	Grpc_GetData_FullMethodName             = "/grpc.server.Grpc/GetData"
+	Grpc_GetAccess_FullMethodName        = "/grpc.server.Grpc/GetAccess"
+	Grpc_ConfirmAccess_FullMethodName    = "/grpc.server.Grpc/ConfirmAccess"
+	Grpc_Ping_FullMethodName             = "/grpc.server.Grpc/Ping"
+	Grpc_CheckChangesData_FullMethodName = "/grpc.server.Grpc/CheckChangesData"
+	Grpc_AddNewData_FullMethodName       = "/grpc.server.Grpc/AddNewData"
+	Grpc_GetData_FullMethodName          = "/grpc.server.Grpc/GetData"
 )
 
 // GrpcClient is the client API for Grpc service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GrpcClient interface {
-	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
-	Registration(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error)
-	RegistrationAccept(ctx context.Context, in *RegistrationAcceptRequest, opts ...grpc.CallOption) (*RegistrationAcceptResponse, error)
-	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
-	ResetPasswordAccepd(ctx context.Context, in *ResetPasswordAccepdRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
+	GetAccess(ctx context.Context, in *GetAccessRequest, opts ...grpc.CallOption) (*GetAccessResponse, error)
+	ConfirmAccess(ctx context.Context, in *ConfirmAccessRequest, opts ...grpc.CallOption) (*ConfirmAccessResponse, error)
+	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	CheckChangesData(ctx context.Context, in *CheckChangesDataRequest, opts ...grpc.CallOption) (*CheckChangesDataResponse, error)
 	AddNewData(ctx context.Context, in *AddNewDataRequest, opts ...grpc.CallOption) (*AddNewDataResponse, error)
 	GetData(ctx context.Context, in *GetDataRequest, opts ...grpc.CallOption) (*GetDataResponse, error)
@@ -51,45 +47,27 @@ func NewGrpcClient(cc grpc.ClientConnInterface) GrpcClient {
 	return &grpcClient{cc}
 }
 
-func (c *grpcClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
-	out := new(LoginResponse)
-	err := c.cc.Invoke(ctx, Grpc_Login_FullMethodName, in, out, opts...)
+func (c *grpcClient) GetAccess(ctx context.Context, in *GetAccessRequest, opts ...grpc.CallOption) (*GetAccessResponse, error) {
+	out := new(GetAccessResponse)
+	err := c.cc.Invoke(ctx, Grpc_GetAccess_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *grpcClient) Registration(ctx context.Context, in *RegistrationRequest, opts ...grpc.CallOption) (*RegistrationResponse, error) {
-	out := new(RegistrationResponse)
-	err := c.cc.Invoke(ctx, Grpc_Registration_FullMethodName, in, out, opts...)
+func (c *grpcClient) ConfirmAccess(ctx context.Context, in *ConfirmAccessRequest, opts ...grpc.CallOption) (*ConfirmAccessResponse, error) {
+	out := new(ConfirmAccessResponse)
+	err := c.cc.Invoke(ctx, Grpc_ConfirmAccess_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *grpcClient) RegistrationAccept(ctx context.Context, in *RegistrationAcceptRequest, opts ...grpc.CallOption) (*RegistrationAcceptResponse, error) {
-	out := new(RegistrationAcceptResponse)
-	err := c.cc.Invoke(ctx, Grpc_RegistrationAccept_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *grpcClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error) {
-	out := new(ResetPasswordResponse)
-	err := c.cc.Invoke(ctx, Grpc_ResetPassword_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *grpcClient) ResetPasswordAccepd(ctx context.Context, in *ResetPasswordAccepdRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error) {
-	out := new(ResetPasswordResponse)
-	err := c.cc.Invoke(ctx, Grpc_ResetPasswordAccepd_FullMethodName, in, out, opts...)
+func (c *grpcClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, Grpc_Ping_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,11 +105,9 @@ func (c *grpcClient) GetData(ctx context.Context, in *GetDataRequest, opts ...gr
 // All implementations must embed UnimplementedGrpcServer
 // for forward compatibility
 type GrpcServer interface {
-	Login(context.Context, *LoginRequest) (*LoginResponse, error)
-	Registration(context.Context, *RegistrationRequest) (*RegistrationResponse, error)
-	RegistrationAccept(context.Context, *RegistrationAcceptRequest) (*RegistrationAcceptResponse, error)
-	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
-	ResetPasswordAccepd(context.Context, *ResetPasswordAccepdRequest) (*ResetPasswordResponse, error)
+	GetAccess(context.Context, *GetAccessRequest) (*GetAccessResponse, error)
+	ConfirmAccess(context.Context, *ConfirmAccessRequest) (*ConfirmAccessResponse, error)
+	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	CheckChangesData(context.Context, *CheckChangesDataRequest) (*CheckChangesDataResponse, error)
 	AddNewData(context.Context, *AddNewDataRequest) (*AddNewDataResponse, error)
 	GetData(context.Context, *GetDataRequest) (*GetDataResponse, error)
@@ -142,20 +118,14 @@ type GrpcServer interface {
 type UnimplementedGrpcServer struct {
 }
 
-func (UnimplementedGrpcServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Login not implemented")
+func (UnimplementedGrpcServer) GetAccess(context.Context, *GetAccessRequest) (*GetAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccess not implemented")
 }
-func (UnimplementedGrpcServer) Registration(context.Context, *RegistrationRequest) (*RegistrationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Registration not implemented")
+func (UnimplementedGrpcServer) ConfirmAccess(context.Context, *ConfirmAccessRequest) (*ConfirmAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmAccess not implemented")
 }
-func (UnimplementedGrpcServer) RegistrationAccept(context.Context, *RegistrationAcceptRequest) (*RegistrationAcceptResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RegistrationAccept not implemented")
-}
-func (UnimplementedGrpcServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResetPassword not implemented")
-}
-func (UnimplementedGrpcServer) ResetPasswordAccepd(context.Context, *ResetPasswordAccepdRequest) (*ResetPasswordResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ResetPasswordAccepd not implemented")
+func (UnimplementedGrpcServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedGrpcServer) CheckChangesData(context.Context, *CheckChangesDataRequest) (*CheckChangesDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckChangesData not implemented")
@@ -179,92 +149,56 @@ func RegisterGrpcServer(s grpc.ServiceRegistrar, srv GrpcServer) {
 	s.RegisterService(&Grpc_ServiceDesc, srv)
 }
 
-func _Grpc_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LoginRequest)
+func _Grpc_GetAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccessRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcServer).Login(ctx, in)
+		return srv.(GrpcServer).GetAccess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Grpc_Login_FullMethodName,
+		FullMethod: Grpc_GetAccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcServer).Login(ctx, req.(*LoginRequest))
+		return srv.(GrpcServer).GetAccess(ctx, req.(*GetAccessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Grpc_Registration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegistrationRequest)
+func _Grpc_ConfirmAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmAccessRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcServer).Registration(ctx, in)
+		return srv.(GrpcServer).ConfirmAccess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Grpc_Registration_FullMethodName,
+		FullMethod: Grpc_ConfirmAccess_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcServer).Registration(ctx, req.(*RegistrationRequest))
+		return srv.(GrpcServer).ConfirmAccess(ctx, req.(*ConfirmAccessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Grpc_RegistrationAccept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegistrationAcceptRequest)
+func _Grpc_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcServer).RegistrationAccept(ctx, in)
+		return srv.(GrpcServer).Ping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Grpc_RegistrationAccept_FullMethodName,
+		FullMethod: Grpc_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcServer).RegistrationAccept(ctx, req.(*RegistrationAcceptRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Grpc_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResetPasswordRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GrpcServer).ResetPassword(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Grpc_ResetPassword_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcServer).ResetPassword(ctx, req.(*ResetPasswordRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Grpc_ResetPasswordAccepd_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResetPasswordAccepdRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GrpcServer).ResetPasswordAccepd(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Grpc_ResetPasswordAccepd_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcServer).ResetPasswordAccepd(ctx, req.(*ResetPasswordAccepdRequest))
+		return srv.(GrpcServer).Ping(ctx, req.(*PingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -331,24 +265,16 @@ var Grpc_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GrpcServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Login",
-			Handler:    _Grpc_Login_Handler,
+			MethodName: "GetAccess",
+			Handler:    _Grpc_GetAccess_Handler,
 		},
 		{
-			MethodName: "Registration",
-			Handler:    _Grpc_Registration_Handler,
+			MethodName: "ConfirmAccess",
+			Handler:    _Grpc_ConfirmAccess_Handler,
 		},
 		{
-			MethodName: "RegistrationAccept",
-			Handler:    _Grpc_RegistrationAccept_Handler,
-		},
-		{
-			MethodName: "ResetPassword",
-			Handler:    _Grpc_ResetPassword_Handler,
-		},
-		{
-			MethodName: "ResetPasswordAccepd",
-			Handler:    _Grpc_ResetPasswordAccepd_Handler,
+			MethodName: "Ping",
+			Handler:    _Grpc_Ping_Handler,
 		},
 		{
 			MethodName: "CheckChangesData",

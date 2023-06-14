@@ -7,18 +7,23 @@ option go_package = "grpc/server";
 
 // # REQUEST
 // Login request
-message LoginRequest {
-    string email = 1;
-    string password = 2;
+message GetAccessRequest {
+    bytes access = 1;
+}
+message GetAccessResponse {
+    bytes token = 1;
+}
+
+message ConfirmAccessRequest {
+    bytes access = 1;
+
 }
 // # RESPOSE
 // Login respoinse 
-message LoginResponse {
-    bytes access = 1;
-    bytes refresh = 2;
-    bytes userKey = 3;
-    string error = 4;
+message ConfirmAccessResponse {
+    bytes data = 1;
 }
+
 
 
 // # REQUEST
@@ -28,30 +33,6 @@ message RegistrationRequest {
     string password = 2;
 }
 
-// # RESPOSE
-//Registration respoinse
-message RegistrationResponse {
-    string hash = 1;
-    string error = 2;
-}
-
-message ResetPasswordRequest {
-    string email = 1;
-}
-message ResetPasswordAccepdRequest {
-    string email = 1;
-    string code = 2;
-}
-message ResetPasswordResponse {
-    string error = 2;
-}
-
-// # REQUEST
-// Registration accept request
-message RegistrationAcceptRequest {
-    string email = 1;
-    string code = 2;
-}
 
 // # RESPOSE
 // Registration accept respose
@@ -118,15 +99,18 @@ message CheckChangesDataResponse {
     string error = 2;
 }
 
+message PingResponse {
+    bool ok = 1;
+}
+message PingRequest {
+}
 
 
 service Grpc {
-    rpc Login(LoginRequest) returns (LoginResponse);
-    rpc Registration(RegistrationRequest) returns (RegistrationResponse);
-    rpc RegistrationAccept(RegistrationAcceptRequest) returns (RegistrationAcceptResponse);
-    rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
-    rpc ResetPasswordAccepd(ResetPasswordAccepdRequest) returns (ResetPasswordResponse);
+    rpc GetAccess(GetAccessRequest) returns (GetAccessResponse);
+    rpc ConfirmAccess(ConfirmAccessRequest) returns (ConfirmAccessResponse);
 
+    rpc Ping(PingRequest) returns (PingResponse);
     rpc CheckChangesData(CheckChangesDataRequest) returns (CheckChangesDataResponse);
     rpc AddNewData(AddNewDataRequest) returns (AddNewDataResponse);
     rpc GetData(GetDataRequest) returns (GetDataResponse);

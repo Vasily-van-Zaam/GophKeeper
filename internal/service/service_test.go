@@ -9,8 +9,11 @@ import (
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	server "github.com/Vasily-van-Zaam/GophKeeper.git/internal/transport/grpc"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -72,8 +75,8 @@ func Test_service_handlerAuth(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				user: &core.User{
-					Email: "email@example.com",
-					Hash:  "1234",
+					Email:      "email@example.com",
+					PrivateKey: "1234",
 				},
 			},
 		},
@@ -88,6 +91,13 @@ func Test_service_handlerAuth(t *testing.T) {
 
 			md := metadata.New(map[string]string{})
 			md.Set("client_version", "0.0.1")
+
+			conn, err := grpc.Dial(":3200", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				log.Println("connection err", err)
+			}
+			client := server.NewGrpcClient(conn)
+			log.Println("connection ok", client)
 
 			ctx := metadata.NewIncomingContext(tt.args.ctx, md)
 

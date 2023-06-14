@@ -26,12 +26,18 @@ type Store interface {
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
+	Close() error
 }
 
 type store struct {
 	data     *core.DataGob
 	filePath string
 	config   config.Config
+}
+
+// Close implements Store.
+func (*store) Close() error {
+	panic("unimplemented")
 }
 
 // SearchData implements Store.

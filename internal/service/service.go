@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"time"
 
@@ -23,6 +22,7 @@ type Store interface {
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 }
+
 type UserStore interface {
 	GetUserByEmail(ctx context.Context, email string) (*core.User, error)
 	AddUser(ctx context.Context, user *core.User) (*core.User, error)
@@ -38,15 +38,14 @@ type Service interface {
 }
 
 type UserService interface {
-	Login(ctx context.Context, form *core.LoginForm) (*core.AuthToken, error)
-	Registration(ctx context.Context, form *core.LoginForm) (*string, error)
-	RegistrationAccept(ctx context.Context, form *core.LoginForm) error
+	GetAccess(ctx context.Context, form *core.AccessForm) ([]byte, error)
+	ConfirmAccess(ctx context.Context, form *core.AccessForm) (*core.User, error)
 }
 
 func (s *service) handlerAuth(ctx context.Context, user *core.User) (*core.AuthToken, error) {
 	data, ok := metadata.FromIncomingContext(ctx)
-	md := ctx.Value("client_version")
-	log.Println(md)
+	// md := ctx.Value("client_version")
+	// log.Println(md)
 	if !ok {
 		return nil, errors.New("err metadata")
 	}

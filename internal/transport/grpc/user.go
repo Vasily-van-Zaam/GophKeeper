@@ -2,32 +2,49 @@ package server
 
 import (
 	context "context"
-	"strings"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
-	"google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 )
 
-func (srv *server) Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error) {
-	var (
-		resp *LoginResponse
-	)
-	res, err := srv.user.Login(ctx, &core.LoginForm{
-		Email:   req.Email,
-		Pasword: req.Password,
-	})
+func (srv *server) GetAccess(ctx context.Context, req *GetAccessRequest) (*GetAccessResponse, error) {
+	// расшифровываем данные из GetAccessRequest.Email  и ищем по email юзера
+	// получаем ответ от сервиса что код отправлен на почту или выдаем ошибку
+	var access core.AccessForm
+	err := srv.auth.DecryptData(ctx, req.Access, &access)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return nil, status.Errorf(codes.PermissionDenied, "incorrect login or password")
-		}
-		return nil, status.Errorf(codes.PermissionDenied, err.Error())
-	}
-	resp = &LoginResponse{
-		Access:  res.Access,
-		Refresh: res.Refresh,
-		UserKey: res.UserKey,
+		return nil, err
 	}
 
-	return resp, nil
+	token, err := srv.user.GetAccess(ctx, &access)
+	if err != nil {
+		return nil, err
+	}
+	return &GetAccessResponse{
+		Token: token,
+	}, nil
+}
+func (srv *server) ConfirmAccess(ctx context.Context, req *ConfirmAccessRequest) (*ConfirmAccessResponse, error) {
+	// расшифровываем данные из ConfirmAccessRequest.EmailCode
+	// дынные будут лежать в виде строки
+
+	var access core.AccessForm
+	err := srv.auth.DecryptData(ctx, req.Access, &access)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := srv.user.ConfirmAccess(ctx, &access)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// зашифровываем данные
+	bUser, err := srv.auth.EncryptData(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+	return &ConfirmAccessResponse{
+		Data: bUser,
+	}, nil
 }

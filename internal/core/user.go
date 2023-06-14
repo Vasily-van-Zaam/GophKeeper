@@ -7,7 +7,7 @@ type User struct {
 	Age            string `json:"age"`
 	Sex            string `json:"sex"`
 	Email          string `json:"email"`
-	Hash           string `json:"hash"`
+	PrivateKey     string `json:"private_key"`
 	ID             string `json:"id"`
 	EmailConfirmed bool   `json:"email_confirmed"`
 }
@@ -21,9 +21,10 @@ type UserProfile struct {
 }
 
 // User Login form for authenticated.
-type LoginForm struct {
-	Email   string `json:"email"`
-	Pasword string `json:"pasword"`
+type AccessForm struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+	Token []byte `json:"token"`
 }
 
 type RegistrationAccept struct {

@@ -4,6 +4,8 @@ import (
 	context "context"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 func (srv *server) GetAccess(ctx context.Context, req *GetAccessRequest) (*GetAccessResponse, error) {
@@ -17,7 +19,7 @@ func (srv *server) GetAccess(ctx context.Context, req *GetAccessRequest) (*GetAc
 
 	token, err := srv.user.GetAccess(ctx, &access)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.NotFound, "not found user")
 	}
 	return &GetAccessResponse{
 		Token: token,
@@ -30,19 +32,19 @@ func (srv *server) ConfirmAccess(ctx context.Context, req *ConfirmAccessRequest)
 	var access core.AccessForm
 	err := srv.auth.DecryptData(ctx, req.Access, &access)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 
 	user, err := srv.user.ConfirmAccess(ctx, &access)
 
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.NotFound, err.Error())
 	}
 
 	// зашифровываем данные
 	bUser, err := srv.auth.EncryptData(ctx, user)
 	if err != nil {
-		return nil, err
+		return nil, status.Error(codes.PermissionDenied, err.Error())
 	}
 	return &ConfirmAccessResponse{
 		Data: bUser,

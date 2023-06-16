@@ -6,12 +6,15 @@ package appclient
 
 import (
 	"context"
+	"errors"
 	"log"
+	"regexp"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/repository"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/storage/localstore"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/grpc/metadata"
 )
@@ -66,17 +69,38 @@ func New(conf config.Config) (ApplicationClient, error) {
 	}, nil
 }
 
+func (c *client) checkValidPassword(psw string) bool {
+	secure := true
+	tests := []string{".{8,}", "[a-z]", "[A-Z]", "[0-9]", "[^\\d\\w]"}
+	for _, test := range tests {
+		t, _ := regexp.MatchString(test, psw)
+		if !t {
+			secure = false
+			break
+		}
+	}
+	return secure
+}
 func (c *client) startClient() error {
 	ctx := context.Background()
 	md := metadata.New(map[string]string{core.CtxVersionClientKey: c.config.Client().Version()})
 
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	////////////////////////////////////////////////////////////////
-	data, err := c.repository.Local().GetData(ctx, string(core.DataTypeUser))
+	var (
+		err       error
+		localUser *core.User
+	)
+
+	localUser, err = c.repository.Local().GetAccessData(ctx)
+	log.Print("-------", localUser, err, c.repository.Local().GetAccessData)
 	if err != nil {
-		return err
+		if err.Error() != "not found" {
+			return err
+		}
 	}
-	if len(data) == 0 {
+
+	if localUser == nil {
 		accessForms := NewAcessForms(c.pages, "test@mail.ru")
 		accessForms.NewFormGetAccess("GetAccess", func(form *core.AccessForm) {
 			token, errGet := c.repository.Remote().GetAccess(ctx, form)
@@ -92,13 +116,41 @@ func (c *client) startClient() error {
 					ModalError(err1, "Confirm", c.pages)
 					return
 				}
-				log.Print(user)
+
+				if user != nil {
+					accessForms.NewFormCreateMasterPassword("CreatPassword", func(password, repeat string) {
+						if password != repeat {
+							ModalError(errors.New("password mismatch"), "CreatPassword", c.pages)
+							return
+						} else if !c.checkValidPassword(password) {
+							ModalError(errors.New(
+								"password must be at least 8 characters long, contain"+
+									" special characters, numbers, and lowercase and uppercase characters"), "CreatPassword", c.pages)
+						}
+						err = c.repository.Local().AddAccessData(ctx, password, user)
+						if err != nil {
+							ModalError(err, "CreatPassword", c.pages)
+						}
+					}, func() {
+						c.pages.SwitchToPage("Confirm")
+					})
+				}
 			}, func() {
 				c.pages.SwitchToPage("GetAccess")
 			})
 		}, func() {
 			c.Stop()
 		})
+	} else {
+		frame := tview.NewFrame(tview.NewBox().SetBackgroundColor(tcell.ColorBlue)).
+			SetBorders(2, 2, 2, 2, 4, 4).
+			AddText("GophKeeper", true, tview.AlignLeft, tcell.ColorWhite).
+			AddText("Create MASTER PASSWORD", true, tview.AlignCenter, tcell.ColorWhite).
+			AddText("GophKeeper", true, tview.AlignRight, tcell.ColorWhite).
+			// AddText("Header second middle", true, tview.AlignCenter, tcell.ColorRed).
+			AddText("Super GophKeeper", false, tview.AlignCenter, tcell.ColorGreen).
+			AddText("GophKeeper inc", false, tview.AlignCenter, tcell.ColorGreen)
+		c.pages.AddPage("Main", frame, true, true)
 	}
 
 	return nil

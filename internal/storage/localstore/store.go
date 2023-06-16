@@ -23,6 +23,7 @@ type Store interface {
 	ChangeUser(ctx context.Context, user *core.User) (*core.User, error)
 
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
+	GetAccessData(ctx context.Context) (*core.ManagerData, error)
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
@@ -33,6 +34,20 @@ type store struct {
 	data     *core.DataGob
 	filePath string
 	config   config.Config
+}
+
+// GetAccessData implements Store.
+func (s *store) GetAccessData(ctx context.Context) (*core.ManagerData, error) {
+	if s.data == nil {
+		return nil, errors.New("data is nil")
+	}
+
+	for _, d := range s.data.DataList {
+		if d.DataType == string(core.DataTypeUser) {
+			return d, nil
+		}
+	}
+	return nil, errors.New("not found")
 }
 
 // Close implements Store.
@@ -115,6 +130,9 @@ func (s *store) GetData(ctx context.Context, userID string, types ...string) ([]
 	}
 	res := make([]*core.ManagerData, 0)
 	for _, d := range s.data.DataList {
+		if d.UserID == nil {
+			return nil, errors.New("userID is nil")
+		}
 		if d.UserID.String() == userID && s.containsTypes(d.DataType, types...) {
 			res = append(res, d)
 		}

@@ -13,15 +13,54 @@ func (a *accessForm) changeEmail(text string) {
 func (a *accessForm) changeCode(text string) {
 	a.code = text
 }
+func (a *accessForm) changePassword(text string) {
+	a.masterPassword = text
+}
+func (a *accessForm) repeatPassword(text string) {
+	a.repeatPasword = text
+}
 
 type AccessForms interface {
 	NewFormGetAccess(pageName string, login func(form *core.AccessForm), back func())
 	NewFormConfirmAccess(pageName string, login func(form *core.AccessForm), back func())
+	NewFormCreateMasterPassword(pageName string, create func(password, repeat string), back func())
 }
 type accessForm struct {
-	email string
-	code  string
-	pages *tview.Pages
+	email          string
+	code           string
+	masterPassword string
+	repeatPasword  string
+	pages          *tview.Pages
+}
+
+// NewFormCreateMasterPassword implements AccessForms.
+func (a *accessForm) NewFormCreateMasterPassword(pageName string, create func(password, repeat string), back func()) {
+	form := tview.NewForm().SetFocus(1)
+
+	form.AddInputField("master password", a.masterPassword, 50, nil, a.changePassword)
+	form.AddInputField("repeat", a.repeatPasword, 50, nil, a.repeatPassword)
+
+	form.AddButton("back", func() {
+		a.pages.RemovePage(pageName)
+		a.masterPassword = ""
+		a.repeatPasword = ""
+		back()
+	})
+	form.AddButton("next", func() {
+		create(a.masterPassword, a.repeatPasword)
+	})
+
+	frame := tview.NewFrame(tview.NewBox().SetBackgroundColor(tcell.ColorBlue)).
+		SetBorders(2, 2, 2, 2, 4, 4).
+		SetPrimitive(form).
+		AddText("GophKeeper", true, tview.AlignLeft, tcell.ColorWhite).
+		AddText("Create MASTER PASSWORD", true, tview.AlignCenter, tcell.ColorWhite).
+		AddText("GophKeeper", true, tview.AlignRight, tcell.ColorWhite).
+		// AddText("Header second middle", true, tview.AlignCenter, tcell.ColorRed).
+		AddText("Super GophKeeper", false, tview.AlignCenter, tcell.ColorGreen).
+		AddText("GophKeeper inc", false, tview.AlignCenter, tcell.ColorGreen)
+
+	a.pages.AddPage(pageName, frame, true, true)
 }
 
 func NewAcessForms(pages *tview.Pages, email ...string) AccessForms {

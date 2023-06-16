@@ -9,10 +9,12 @@ import (
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/logger"
+	"github.com/google/uuid"
 	"google.golang.org/grpc/metadata"
 )
 
 func Test_authenticated_EncryptDeecryptData(t *testing.T) {
+	id := uuid.New()
 	crypt := cryptor.New()
 	type fields struct {
 		config config.Config
@@ -41,13 +43,13 @@ func Test_authenticated_EncryptDeecryptData(t *testing.T) {
 				versionOnClient: "0.0.1",
 				user: &User{
 					Email:      "test@email.com",
-					ID:         "123456789",
+					ID:         &id,
 					PrivateKey: "privatePrivateKey",
 				},
 			},
 			want: &User{
 				Email:      "test@email.com",
-				ID:         "123456789",
+				ID:         &id,
 				PrivateKey: "privatePrivateKey",
 			},
 		},
@@ -62,13 +64,13 @@ func Test_authenticated_EncryptDeecryptData(t *testing.T) {
 				versionOnClient: "0.0.0",
 				user: &User{
 					Email:      "test@email.com",
-					ID:         "123456789",
+					ID:         &id,
 					PrivateKey: "privatePrivateKey",
 				},
 			},
 			want: &User{
 				Email:      "test@email.com",
-				ID:         "123456789",
+				ID:         &id,
 				PrivateKey: "privatePrivateKey",
 			},
 		},
@@ -82,7 +84,7 @@ func Test_authenticated_EncryptDeecryptData(t *testing.T) {
 				version: "0.0.2",
 				user: &User{
 					Email: "test@email.com",
-					ID:    "123456789",
+					ID:    &id,
 				},
 			},
 			wantErr: true,

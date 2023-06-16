@@ -110,6 +110,18 @@ func (s *setter) Data(masterPsw string, data []byte) error {
 	return s.setData(masterPsw, DataTypeText, data)
 }
 
+// Data implements Setter.
+func (s *setter) AccessData(masterPsw string, user *User) error {
+	if s.data.encryptor == nil {
+		return errors.New("need add encrypter")
+	}
+	d, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+	return s.setData(masterPsw, DataTypeUser, d)
+}
+
 // MetaData implements Setter.
 func (s *setter) MetaData(metaData string) Manager {
 	s.data.infoData.MetaData = metaData

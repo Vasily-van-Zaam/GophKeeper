@@ -5,18 +5,18 @@ import (
 )
 
 type Repository interface {
-	Local() localStore
+	Local() Local
 	Remote() remoteStore
 }
 
 type repository struct {
 	config config.Config
 	remote remoteStore
-	local  localStore
+	local  Local
 }
 
 // Local implements Repository.
-func (r *repository) Local() localStore {
+func (r *repository) Local() Local {
 	return r.local
 }
 
@@ -29,6 +29,6 @@ func New(conf config.Config, local localStore) Repository {
 	return &repository{
 		remote: NewRemote(conf),
 		config: conf,
-		local:  local,
+		local:  NewLocal(conf, local),
 	}
 }

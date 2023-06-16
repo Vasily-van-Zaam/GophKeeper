@@ -22,6 +22,7 @@ type Encryptor interface {
 
 // someData.Set().MetaData("some info").DataType("pasword").Data(hash_password, []bayte(PasswordForm{})).
 type Setter interface {
+	AccessData(masterPsw string, user *User) error
 	MetaData(metaData string) Manager
 	Data(hash string, data []byte) error
 	Password(hash string, psw *PasswordForm) error

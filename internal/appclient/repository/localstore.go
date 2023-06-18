@@ -14,7 +14,7 @@ type localStore interface {
 	GetUserByEmail(ctx context.Context, email string) (*core.User, error)
 	AddUser(ctx context.Context, user *core.User) (*core.User, error)
 	ChangeUser(ctx context.Context, user *core.User) (*core.User, error)
-
+	ResetUserData(ctx context.Context) error
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
 	GetAccessData(ctx context.Context) (*core.ManagerData, error)
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
@@ -25,18 +25,24 @@ type localStore interface {
 
 type Local interface {
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
-	GetAccessData(ctx context.Context) (*core.User, error)
+	GetAccessData(ctx context.Context, masterPsw string) (*core.User, error)
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	AddAccessData(ctx context.Context, masterPsw string, user *core.User) error
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
+	ResetUserData(ctx context.Context) error
 }
 
 type local struct {
 	store  localStore
 	config config.Config
 	auth   core.Auth
+}
+
+// ResetUserData implements Local.
+func (l *local) ResetUserData(ctx context.Context) error {
+	return l.store.ResetUserData(ctx)
 }
 
 // AddAccessData implements Local.
@@ -57,17 +63,16 @@ func (l *local) AddAccessData(ctx context.Context, masterPsw string, user *core.
 }
 
 // GetAccessData implements localStore.
-func (l *local) GetAccessData(ctx context.Context) (*core.User, error) {
+func (l *local) GetAccessData(ctx context.Context, masterPsw string) (*core.User, error) {
 	data, err := l.store.GetAccessData(ctx)
 	if err != nil {
 		return nil, err
 	}
 	// return nil, errors.New("test")
 	manager := data.ToManager().AddEncription(l.config.Encryptor())
-
-	version := l.config.Client().Version()
-	log.Println("===", l.config.Server().SecretKey(version))
-	d, err := manager.Get().Data(l.config.Server().SecretKey(version))
+	// version := l.config.Client().Version()
+	// log.Println("===", l.config.Server().SecretKey(version))
+	d, err := manager.Get().Data(masterPsw)
 	if err != nil {
 		return nil, err
 	}

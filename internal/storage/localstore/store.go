@@ -28,12 +28,28 @@ type Store interface {
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
+	ResetUserData(ctx context.Context) error
 }
 
 type store struct {
 	data     *core.DataGob
 	filePath string
 	config   config.Config
+}
+
+// ResetUserData implements Store.
+func (s *store) ResetUserData(ctx context.Context) error {
+	if s.data == nil {
+		return errors.New("data is nil")
+	}
+	for i, d := range s.data.DataList {
+		if d.DataType == string(core.DataTypeUser) {
+			s.data.DataList[i] = s.data.DataList[len(s.data.DataList)-1]
+			s.data.DataList = s.data.DataList[:len(s.data.DataList)-1]
+			break
+		}
+	}
+	return nil
 }
 
 // GetAccessData implements Store.

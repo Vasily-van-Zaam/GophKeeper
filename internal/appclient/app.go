@@ -7,14 +7,15 @@ package appclient
 import (
 	"context"
 	"errors"
-	"log"
 	"regexp"
+
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/page"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/repository"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/storage/localstore"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"google.golang.org/grpc/metadata"
 )
@@ -22,10 +23,14 @@ import (
 type ApplicationClient interface {
 	Run() error
 	Stop()
+	Pages() *tview.Pages
+	Repository() repository.Repository
+	Config() config.Config
 }
 
 type client struct {
-	pages *tview.Pages
+	pages          *tview.Pages
+	privateUserKey string
 	// form       *tview.Form
 	app *tview.Application
 	// modal      *tview.Modal
@@ -35,6 +40,21 @@ type client struct {
 	// button     *tview.Button
 	repository repository.Repository
 	config     config.Config
+}
+
+// Config implements ApplicationClient.
+func (c *client) Config() config.Config {
+	return c.config
+}
+
+// Pages implements ApplicationClient.
+func (c *client) Pages() *tview.Pages {
+	return c.pages
+}
+
+// Repository implements ApplicationClient.
+func (c *client) Repository() repository.Repository {
+	return c.repository
 }
 
 // Stop implements ApplicationClient.
@@ -87,71 +107,56 @@ func (c *client) startClient() error {
 
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	////////////////////////////////////////////////////////////////
-	var (
-		err       error
-		localUser *core.User
-	)
 
-	localUser, err = c.repository.Local().GetAccessData(ctx)
-	log.Print("-------", localUser, err, c.repository.Local().GetAccessData)
-	if err != nil {
-		if err.Error() != "not found" {
-			return err
-		}
-	}
+	accessPage := page.NewGetAccessPage(c, "GetAccess", "close")
+	resetAccessPage := page.NewGetAccessPage(c, "GetAccess", "back")
+	loginPage := page.NewLoginPage(c, "Login", "close")
 
-	if localUser == nil {
-		accessForms := NewAcessForms(c.pages, "test@mail.ru")
-		accessForms.NewFormGetAccess("GetAccess", func(form *core.AccessForm) {
-			token, errGet := c.repository.Remote().GetAccess(ctx, form)
-			if errGet != nil {
-				ModalError(errGet, "GetAccess", c.pages)
-				return
-			}
-			accessForms.NewFormConfirmAccess("Confirm", func(form *core.AccessForm) {
-				form.Token = token
+	accessiblePage := page.NewAccessiblePage(c, "AccessiblePage", "close")
+	// accessiblePage.Show(ctx, true)
+	// return nil
+	loginPage.
+		Next(func(puk string) {
+			// log.Println(puk)
 
-				user, err1 := c.repository.Remote().ConfirmAccess(ctx, form)
-				if err1 != nil {
-					ModalError(err1, "Confirm", c.pages)
-					return
-				}
-
-				if user != nil {
-					accessForms.NewFormCreateMasterPassword("CreatPassword", func(password, repeat string) {
-						if password != repeat {
-							ModalError(errors.New("password mismatch"), "CreatPassword", c.pages)
-							return
-						} else if !c.checkValidPassword(password) {
-							ModalError(errors.New(
-								"password must be at least 8 characters long, contain"+
-									" special characters, numbers, and lowercase and uppercase characters"), "CreatPassword", c.pages)
-						}
-						err = c.repository.Local().AddAccessData(ctx, password, user)
-						if err != nil {
-							ModalError(err, "CreatPassword", c.pages)
-						}
-					}, func() {
-						c.pages.SwitchToPage("Confirm")
-					})
-				}
-			}, func() {
-				c.pages.SwitchToPage("GetAccess")
-			})
-		}, func() {
+			accessiblePage.
+				Show(ctx, true).
+				Reset(func() {
+					accessiblePage.Close(true)
+					loginPage.Show(ctx, true)
+				})
+			loginPage.Close(true)
+			accessPage.Close(true)
+			c.privateUserKey = puk
+			component.ModalError(errors.New(puk), "AccessiblePage", c.pages)
+		}).
+		Reset(func() {
+			resetAccessPage.
+				Back(func() {
+					// c.pages.SwitchToPage("Login")
+					loginPage.Show(ctx, true)
+					resetAccessPage.Close(true)
+				}).
+				Next(func(puk string) {
+					loginPage.Show(ctx, true)
+					resetAccessPage.Close(true)
+				}).
+				Show(ctx, true)
+		}).
+		Back(func() {
 			c.Stop()
 		})
-	} else {
-		frame := tview.NewFrame(tview.NewBox().SetBackgroundColor(tcell.ColorBlue)).
-			SetBorders(2, 2, 2, 2, 4, 4).
-			AddText("GophKeeper", true, tview.AlignLeft, tcell.ColorWhite).
-			AddText("Create MASTER PASSWORD", true, tview.AlignCenter, tcell.ColorWhite).
-			AddText("GophKeeper", true, tview.AlignRight, tcell.ColorWhite).
-			// AddText("Header second middle", true, tview.AlignCenter, tcell.ColorRed).
-			AddText("Super GophKeeper", false, tview.AlignCenter, tcell.ColorGreen).
-			AddText("GophKeeper inc", false, tview.AlignCenter, tcell.ColorGreen)
-		c.pages.AddPage("Main", frame, true, true)
-	}
 
+	d, errAccess := c.repository.Store().GetAccessData(ctx)
+	accessPage.
+		Show(ctx, errAccess != nil).
+		Next(func(puk string) {
+			loginPage.Show(ctx, true)
+			accessPage.Close(true)
+		}).
+		Back(func() {
+			c.Stop()
+		})
+	loginPage.Show(ctx, d != nil)
 	return nil
 }

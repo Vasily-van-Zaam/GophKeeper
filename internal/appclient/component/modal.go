@@ -1,4 +1,4 @@
-package appclient
+package component
 
 import (
 	"github.com/rivo/tview"

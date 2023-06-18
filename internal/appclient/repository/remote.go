@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/hex"
+	"log"
 	"time"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
@@ -126,7 +127,7 @@ func (r *remote) Ping(ctx context.Context) (bool, error) {
 func NewRemote(conf config.Config) remoteStore {
 	conn, err := grpc.Dial(conf.Client().SrvAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		// log.Println("connection err", err)
+		log.Println("connection err", err)
 	}
 	// log.Println("connection ok", conn)
 	client := server.NewGrpcClient(conn)

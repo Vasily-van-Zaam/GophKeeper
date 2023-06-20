@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -14,7 +15,7 @@ type accessiblePage struct {
 	buttonNameBack string
 	reset          func()
 	back           func()
-	next           func(puk string)
+	next           func(user *core.User)
 }
 
 // Close implements AppPage.
@@ -36,13 +37,16 @@ func (a *accessiblePage) Back(back func()) AppPage {
 }
 
 // Next implements AppPage.
-func (a *accessiblePage) Next(next func(puk string)) AppPage {
+func (a *accessiblePage) Next(next func(user *core.User)) AppPage {
 	a.next = next
 	return a
 }
 
 // Show implements AppPage.
-func (a *accessiblePage) Show(context.Context, bool) AppPage {
+func (a *accessiblePage) Show(ctx context.Context, show bool) AppPage {
+	// if !show {
+	// 	return a
+	// }
 	button := tview.NewButton("❌").SetSelectedFunc(func() {
 		a.reset()
 	})
@@ -50,11 +54,18 @@ func (a *accessiblePage) Show(context.Context, bool) AppPage {
 		a.reset()
 	})
 	button2.SetBackgroundColorActivated(tcell.ColorIndianRed)
-
+	userID := a.client.User().ID.String()
 	// button.SetBorder(true).SetRect(0, 0, 22, 3)
 
-	frame := component.NewGridAccessible(button2, button) // NewFrameAccessible(button, button, "GophKeeper v0.1")
+	data, err := a.client.Repository().Local().GetData(ctx, userID)
+	frame := component.NewGridAccessible(data, button2, button)
 	a.client.Pages().AddPage(a.name, frame, true, true)
+	if err != nil {
+		component.ModalError(err, "AccessiblePage", a.client.Pages())
+		// return a
+	}
+	// NewFrameAccessible(button, button, "GophKeeper v0.1")
+
 	return a
 }
 

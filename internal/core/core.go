@@ -28,6 +28,7 @@ type Setter interface {
 	Password(hash string, psw *PasswordForm) error
 	BankCard(hash string, card *BankCardFomm) error
 	Text(hash string, data string) error
+	TryPassword(hash string, count int) error
 }
 
 // Getter functions.
@@ -50,11 +51,12 @@ type DataType string
 
 // List data  types.
 const (
-	DataTypePassword DataType = "password"
-	DataTypeCard     DataType = "card"
-	DataTypeText     DataType = "text"
-	DataTypeFile     DataType = "file"
-	DataTypeUser     DataType = "user"
+	DataTypePassword    DataType = "password"
+	DataTypeCard        DataType = "card"
+	DataTypeText        DataType = "text"
+	DataTypeFile        DataType = "file"
+	DataTypeUser        DataType = "user"
+	DataTypeTryPassword DataType = "trypassword"
 )
 
 type DataGob struct {

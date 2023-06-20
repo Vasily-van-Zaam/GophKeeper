@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"encoding/json"
-	"log"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
@@ -21,6 +20,9 @@ type localStore interface {
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
+	AddTryPasword(ctx context.Context, data *core.ManagerData) error
+	GetTryPasword(ctx context.Context) (*core.ManagerData, error)
+	AddAccessData(ctx context.Context, data *core.ManagerData) error
 }
 
 type Local interface {
@@ -32,12 +34,60 @@ type Local interface {
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
 	ResetUserData(ctx context.Context) error
+	AddTryPasword(ctx context.Context, count int) error
+	GetTryPasword(ctx context.Context) (int, error)
 }
 
 type local struct {
 	store  localStore
 	config config.Config
 	auth   core.Auth
+}
+
+// AddTryPasword implements Local.
+func (l *local) AddTryPasword(ctx context.Context, count int) error {
+	key := l.config.Server().SecretKey(l.config.Client().Version())
+	count++
+	manager := core.NewManager().AddEncription(l.config.Encryptor())
+	err := manager.
+		Set().MetaData("trypassword").
+		Set().TryPassword(key, count)
+	if err != nil {
+		return err
+	}
+	data, err := manager.ToData()
+	if err != nil {
+		return err
+	}
+	err = l.store.AddTryPasword(ctx, data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetTryPasword implements Local.
+func (l *local) GetTryPasword(ctx context.Context) (int, error) {
+	key := l.config.Server().SecretKey(l.config.Client().Version())
+	var countTry int
+	getCountData, err := l.store.GetTryPasword(ctx)
+	if err != nil {
+		if err.Error() != "not found" {
+			return 0, err
+		}
+		return 0, err
+	}
+
+	counts := getCountData.ToManager()
+	countRes, err := counts.AddEncription(l.config.Encryptor()).Get().Data(key)
+	if err != nil {
+		return 0, err
+	}
+	err = json.Unmarshal(countRes, &countTry)
+	if err != nil {
+		return 0, err
+	}
+	return countTry, nil
 }
 
 // ResetUserData implements Local.
@@ -107,8 +157,7 @@ func (l *local) Close() error {
 
 // GetData implements Local.
 func (l *local) GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error) {
-	log.Println("?????", l)
-	return nil, nil
+	return l.store.GetData(ctx, userID, types...)
 }
 
 func NewLocal(conf config.Config, store localStore) Local {

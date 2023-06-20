@@ -2,8 +2,11 @@ package page
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
+	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 )
 
 type loginPage struct {
@@ -12,7 +15,7 @@ type loginPage struct {
 	buttonNameBack string
 	reset          func()
 	back           func()
-	next           func(puk string)
+	next           func(user *core.User)
 }
 
 // Close implements AppPage.
@@ -34,7 +37,7 @@ func (l *loginPage) Back(back func()) AppPage {
 }
 
 // Next implements AppPage.
-func (l *loginPage) Next(next func(puk string)) AppPage {
+func (l *loginPage) Next(next func(user *core.User)) AppPage {
 	l.next = next
 	return l
 }
@@ -49,10 +52,18 @@ func (l *loginPage) Show(ctx context.Context, show bool) AppPage {
 		l.buttonNameBack, func(password string) {
 			localUser, err := l.client.Repository().Local().GetAccessData(ctx, password)
 			if err != nil {
-				component.ModalError(err, "Login", l.client.Pages())
+				if strings.Contains(err.Error(), "authentication failed") {
+					count, _ := l.client.Repository().Local().GetTryPasword(ctx)
+					component.ModalError(
+						fmt.Errorf("error password. There are %v attempts left", 3-count),
+						"Login", l.client.Pages())
+					_ = l.client.Repository().Local().AddTryPasword(ctx, count)
+					return
+				}
 				return
 			}
-			l.next(localUser.PrivateKey)
+			// l.client.Repository().Local()
+			l.next(localUser)
 		}, func() {
 			l.reset()
 		},

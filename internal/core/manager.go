@@ -42,6 +42,18 @@ type setter struct {
 	data *manager
 }
 
+// TryPassword implements Setter.
+func (s *setter) TryPassword(masterPsw string, count int) error {
+	if s.data.encryptor == nil {
+		return errors.New("need add encrypter")
+	}
+	d, err := json.Marshal(count)
+	if err != nil {
+		return err
+	}
+	return s.setData(masterPsw, DataTypeTryPassword, d)
+}
+
 func (s *setter) isCreating() bool {
 	if s.data != nil {
 		if s.data.infoData != nil {
@@ -107,7 +119,7 @@ func (s *setter) Data(masterPsw string, data []byte) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
-	return s.setData(masterPsw, DataTypeText, data)
+	return s.setData(masterPsw, DataTypeFile, data)
 }
 
 // Data implements Setter.

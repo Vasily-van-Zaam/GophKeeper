@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -24,11 +25,14 @@ type Store interface {
 
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
 	GetAccessData(ctx context.Context) (*core.ManagerData, error)
+	AddAccessData(ctx context.Context, data *core.ManagerData) error
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
 	ResetUserData(ctx context.Context) error
+	AddTryPasword(ctx context.Context, data *core.ManagerData) error
+	GetTryPasword(ctx context.Context) (*core.ManagerData, error)
 }
 
 type store struct {
@@ -37,17 +41,101 @@ type store struct {
 	config   config.Config
 }
 
+// AddAccessData implements Store.
+func (s *store) AddAccessData(ctx context.Context, data *core.ManagerData) error {
+	if data == nil {
+		return errors.New("data is nil")
+	}
+
+	newID := uuid.New()
+	exists := false
+	for i, d := range s.data.DataList {
+		if d.DataType == string(core.DataTypeUser) {
+			d = data
+			exists = true
+			s.data.DataList[i] = s.data.DataList[len(s.data.DataList)-1]
+			s.data.DataList = s.data.DataList[:len(s.data.DataList)-1]
+			break
+		}
+	}
+	for _, d := range s.data.DataList {
+		if d.DataType == string(core.DataTypeTryPassword) {
+			d = data
+			exists = true
+			break
+		}
+	}
+	if !exists {
+		data.ID = &newID
+		s.data.DataList = append(s.data.DataList, data)
+	}
+
+	err := s.saveToFile()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddTryEnterPasword implements Store.
+func (s *store) AddTryPasword(ctx context.Context, data *core.ManagerData) error {
+	if s.data == nil {
+		return errors.New("data is nil")
+	}
+	exists := false
+	for i, d := range s.data.DataList {
+		if d.DataType == string(core.DataTypeTryPassword) {
+			s.data.DataList[i] = data
+			exists = true
+
+			err := s.saveToFile()
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+	if !exists {
+		s.data.DataList = append(s.data.DataList, data)
+		err := s.saveToFile()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetTryEnterPasword implements Store.
+func (s *store) GetTryPasword(ctx context.Context) (*core.ManagerData, error) {
+	if s.data == nil {
+		return nil, errors.New("data is nil")
+	}
+	for _, d := range s.data.DataList {
+		if d.DataType == string(core.DataTypeTryPassword) {
+			return d, nil
+		}
+	}
+	return nil, errors.New("not found")
+}
+
 // ResetUserData implements Store.
 func (s *store) ResetUserData(ctx context.Context) error {
 	if s.data == nil {
 		return errors.New("data is nil")
 	}
 	for i, d := range s.data.DataList {
-		if d.DataType == string(core.DataTypeUser) {
+		if d.DataType == string(core.DataTypeUser) || d.DataType == string(core.DataTypeTryPassword) {
 			s.data.DataList[i] = s.data.DataList[len(s.data.DataList)-1]
 			s.data.DataList = s.data.DataList[:len(s.data.DataList)-1]
+			log.Println(i, "TRY RESET DATA")
+
 			break
 		}
+	}
+	// log.Println("RESET DATA")
+	err := s.saveToFile()
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -93,6 +181,7 @@ func (s *store) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core
 	if data == nil {
 		return nil, errors.New("data is nil")
 	}
+
 	newID := uuid.New()
 
 	for _, d := range data {
@@ -146,12 +235,15 @@ func (s *store) GetData(ctx context.Context, userID string, types ...string) ([]
 	}
 	res := make([]*core.ManagerData, 0)
 	for _, d := range s.data.DataList {
-		if d.UserID == nil {
-			return nil, errors.New("userID is nil")
-		}
-		if d.UserID.String() == userID && s.containsTypes(d.DataType, types...) {
-			res = append(res, d)
-		}
+		// log.Println(d)
+		res = append(res, d)
+		// if d.UserID == nil {
+		// 	continue
+		// 	// return nil, errors.New("userID is nil")
+		// }
+		// if d.UserID.String() == userID && s.containsTypes(d.DataType, types...) {
+		// 	res = append(res, d)
+		// }
 	}
 	return res, nil
 }

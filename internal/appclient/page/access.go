@@ -3,6 +3,7 @@ package page
 import (
 	"context"
 	"errors"
+	"log"
 	"regexp"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
@@ -30,7 +31,7 @@ type getAccessPage struct {
 	buttonNameBack string
 	reset          func()
 	back           func()
-	next           func(puk string)
+	next           func(user *core.User)
 }
 
 // Close implements AppPage.
@@ -52,7 +53,7 @@ func (g *getAccessPage) Back(back func()) AppPage {
 }
 
 // Next implements AppPage.
-func (g *getAccessPage) Next(next func(puk string)) AppPage {
+func (g *getAccessPage) Next(next func(user *core.User)) AppPage {
 	g.next = next
 	return g
 }
@@ -83,8 +84,9 @@ func (g *getAccessPage) formCreatePsw(ctx context.Context, user *core.User, pass
 				" special characters, numbers, and lowercase and uppercase characters"), "CreatPassword", g.client.Pages())
 		return
 	}
-	_ = g.client.Repository().Local().ResetUserData(ctx)
-	err := g.client.Repository().Local().AddAccessData(ctx, password, user)
+	err := g.client.Repository().Local().ResetUserData(ctx)
+	log.Println(err)
+	err = g.client.Repository().Local().AddAccessData(ctx, password, user)
 	if err != nil {
 		component.ModalError(err, "CreatPassword", g.client.Pages())
 		return
@@ -92,7 +94,7 @@ func (g *getAccessPage) formCreatePsw(ctx context.Context, user *core.User, pass
 	g.client.Pages().RemovePage(g.name)
 	g.client.Pages().RemovePage("Confirm")
 	g.client.Pages().RemovePage("CreatPassword")
-	g.next("")
+	g.next(nil)
 }
 
 // Show implements AppPage.

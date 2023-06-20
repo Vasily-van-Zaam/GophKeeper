@@ -6,10 +6,8 @@ package appclient
 
 import (
 	"context"
-	"errors"
 	"regexp"
 
-	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/page"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/repository"
@@ -26,11 +24,12 @@ type ApplicationClient interface {
 	Pages() *tview.Pages
 	Repository() repository.Repository
 	Config() config.Config
+	User() *core.User
 }
 
 type client struct {
-	pages          *tview.Pages
-	privateUserKey string
+	pages *tview.Pages
+	user  *core.User
 	// form       *tview.Form
 	app *tview.Application
 	// modal      *tview.Modal
@@ -40,6 +39,11 @@ type client struct {
 	// button     *tview.Button
 	repository repository.Repository
 	config     config.Config
+}
+
+// User implements ApplicationClient.
+func (c *client) User() *core.User {
+	return c.user
 }
 
 // Config implements ApplicationClient.
@@ -116,9 +120,9 @@ func (c *client) startClient() error {
 	// accessiblePage.Show(ctx, true)
 	// return nil
 	loginPage.
-		Next(func(puk string) {
+		Next(func(user *core.User) {
 			// log.Println(puk)
-
+			c.user = user
 			accessiblePage.
 				Show(ctx, true).
 				Reset(func() {
@@ -127,8 +131,6 @@ func (c *client) startClient() error {
 				})
 			loginPage.Close(true)
 			accessPage.Close(true)
-			c.privateUserKey = puk
-			component.ModalError(errors.New(puk), "AccessiblePage", c.pages)
 		}).
 		Reset(func() {
 			resetAccessPage.
@@ -137,7 +139,7 @@ func (c *client) startClient() error {
 					loginPage.Show(ctx, true)
 					resetAccessPage.Close(true)
 				}).
-				Next(func(puk string) {
+				Next(func(user *core.User) {
 					loginPage.Show(ctx, true)
 					resetAccessPage.Close(true)
 				}).
@@ -150,7 +152,7 @@ func (c *client) startClient() error {
 	d, errAccess := c.repository.Store().GetAccessData(ctx)
 	accessPage.
 		Show(ctx, errAccess != nil).
-		Next(func(puk string) {
+		Next(func(user *core.User) {
 			loginPage.Show(ctx, true)
 			accessPage.Close(true)
 		}).

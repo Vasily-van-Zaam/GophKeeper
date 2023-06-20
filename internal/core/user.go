@@ -4,22 +4,10 @@ import "github.com/google/uuid"
 
 // Model User.
 type User struct {
-	FirstName      string     `json:"first_name"`
-	LastName       string     `json:"last_name"`
-	Age            string     `json:"age"`
-	Sex            string     `json:"sex"`
 	Email          string     `json:"email"`
 	PrivateKey     string     `json:"private_key"`
 	ID             *uuid.UUID `json:"id"`
 	EmailConfirmed bool       `json:"email_confirmed"`
-}
-
-type UserProfile struct {
-	FirrsName string `json:"firrs_name"`
-	LastName  string `json:"last_name"`
-	Age       string `json:"age"`
-	Sex       string `json:"sex"`
-	Email     string `json:"email"`
 }
 
 // User Login form for authenticated.

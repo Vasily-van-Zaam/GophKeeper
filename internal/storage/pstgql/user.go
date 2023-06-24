@@ -11,12 +11,20 @@ import (
 // GetUserByEmail implements Store.
 func (*store) GetUserByEmail(ctx context.Context, email string) (*core.User, error) {
 	id, _ := uuid.Parse("b8756ac3-00a8-4c7f-8590-faf52b0400d0")
+	id2, _ := uuid.Parse("b8756ac3-00a8-4c7f-8590-faf52b0400d1")
 	// log.Println(id)
 	if email == "test@mail.ru" {
 		return &core.User{
 			ID:         &id,
 			Email:      "test@mail.ru",
 			PrivateKey: "private_user_key",
+		}, nil
+	}
+	if email == "test2@mail.ru" {
+		return &core.User{
+			ID:         &id2,
+			Email:      "test2@mail.ru",
+			PrivateKey: "private_user_key_2",
 		}, nil
 	}
 	return nil, errors.New("not found")

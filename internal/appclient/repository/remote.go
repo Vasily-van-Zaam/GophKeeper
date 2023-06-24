@@ -126,11 +126,21 @@ func (r *remote) Ping(ctx context.Context) (bool, error) {
 
 func NewRemote(conf config.Config) remoteStore {
 	conn, err := grpc.Dial(conf.Client().SrvAddress(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
 	if err != nil {
-		log.Println("connection err", err)
+		log.Println("connection to prod err", err)
 	}
-	// log.Println("connection ok", conn)
 	client := server.NewGrpcClient(conn)
+	_, err = client.Ping(context.Background(), nil)
+
+	if err != nil {
+		conn, err = grpc.Dial(conf.Client().SrvAddressProd(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+		if err != nil {
+			log.Println("connection to prod err", err)
+		}
+		client = server.NewGrpcClient(conn)
+	}
 
 	return &remote{
 		config: conf,

@@ -435,3 +435,83 @@ func Test_store_SearchData(t *testing.T) {
 		})
 	}
 }
+
+func Test_store_ResetUserData(t *testing.T) {
+	data := &core.DataGob{
+		DataList: []*core.ManagerData{
+
+			{
+				Data: nil,
+				InfoData: core.InfoData{
+					DataType: string(core.DataTypeTryEnterPassword),
+				},
+			},
+			{
+				Data: nil,
+				InfoData: core.InfoData{
+					DataType: string(core.DataTypeTryEnterPassword),
+				},
+			},
+			{
+				Data: nil,
+				InfoData: core.InfoData{
+					DataType: string(core.DataTypeTryEnterPassword),
+				},
+			},
+			{
+				Data: nil,
+				InfoData: core.InfoData{
+					DataType: string(core.DataTypeUser),
+				},
+			},
+		},
+	}
+
+	conf := config.New(logger.New(), cryptor.New())
+	type fields struct {
+		data     *core.DataGob
+		filePath string
+		config   config.Config
+	}
+	type args struct {
+		ctx   context.Context
+		types []core.DataType
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "store.ResetUserData",
+			fields: fields{
+				data:     data,
+				config:   conf,
+				filePath: "./datastore",
+			},
+			args: args{
+				ctx: context.Background(),
+				types: []core.DataType{
+					core.DataTypeUser,
+					core.DataTypeTryEnterPassword,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &store{
+				data:     tt.fields.data,
+				filePath: tt.fields.filePath,
+				config:   tt.fields.config,
+			}
+			if err := s.ResetUserData(tt.args.ctx, tt.args.types...); (err != nil) != tt.wantErr {
+				t.Errorf("store.ResetUserData() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			log.Println(s)
+			log.Println(tt.fields.data.DataList)
+		})
+	}
+}

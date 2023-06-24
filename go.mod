@@ -3,6 +3,7 @@ module github.com/Vasily-van-Zaam/GophKeeper.git
 go 1.20
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible

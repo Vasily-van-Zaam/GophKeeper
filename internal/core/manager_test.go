@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/pkg/cryptor"
+	"github.com/google/uuid"
 )
 
 func Test_dataManager_Set(t *testing.T) {
@@ -23,7 +24,8 @@ func Test_dataManager_Set(t *testing.T) {
 				Resource: "https://www.google.com",
 			}
 			cryp := cryptor.New()
-			d := NewManager()
+			uID := uuid.New()
+			d := NewManager(&uID)
 			err1 := d.AddEncription(cryp).
 				Set().MetaData("password by google").
 				Set().Password("password", &psw)

@@ -57,12 +57,16 @@ func (l *loginPage) Show(ctx context.Context, show bool) AppPage {
 					component.ModalError(
 						fmt.Errorf("error password. There are %v attempts left", 3-count),
 						"Login", l.client.Pages())
+					if 3-count < 0 {
+						l.client.Repository().Local().ResetUserData(ctx, core.DataTypeTryEnterPassword, core.DataTypeUser)
+						l.client.Stop()
+					}
 					_ = l.client.Repository().Local().AddTryPasword(ctx, count)
 					return
 				}
 				return
 			}
-			// l.client.Repository().Local()
+			l.client.Repository().Local().ResetUserData(ctx, core.DataTypeTryEnterPassword)
 			l.next(localUser)
 		}, func() {
 			l.reset()

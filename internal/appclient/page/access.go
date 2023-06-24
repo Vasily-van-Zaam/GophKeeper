@@ -3,7 +3,6 @@ package page
 import (
 	"context"
 	"errors"
-	"log"
 	"regexp"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
@@ -84,8 +83,8 @@ func (g *getAccessPage) formCreatePsw(ctx context.Context, user *core.User, pass
 				" special characters, numbers, and lowercase and uppercase characters"), "CreatPassword", g.client.Pages())
 		return
 	}
-	err := g.client.Repository().Local().ResetUserData(ctx)
-	log.Println(err)
+	err := g.client.Repository().Local().ResetUserData(ctx, core.DataTypeUser, core.DataTypeTryEnterPassword)
+
 	err = g.client.Repository().Local().AddAccessData(ctx, password, user)
 	if err != nil {
 		component.ModalError(err, "CreatPassword", g.client.Pages())

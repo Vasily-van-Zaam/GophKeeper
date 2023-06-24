@@ -123,7 +123,7 @@ func (a *auth) EncryptData(ctx context.Context, d any) ([]byte, error) {
 		return nil, errors.New("version not found")
 	}
 
-	manager := NewManager().AddEncription(a.config.Encryptor())
+	manager := NewManager(nil).AddEncription(a.config.Encryptor())
 
 	userB, _ := json.Marshal(d)
 	now := time.Now().UTC().Format("2006-01-02T15:04")

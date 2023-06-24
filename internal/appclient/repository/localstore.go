@@ -10,10 +10,12 @@ import (
 
 // localstore Implements.
 type localStore interface {
+	Size() int64
+	LastSync() string
 	GetUserByEmail(ctx context.Context, email string) (*core.User, error)
 	AddUser(ctx context.Context, user *core.User) (*core.User, error)
 	ChangeUser(ctx context.Context, user *core.User) (*core.User, error)
-	ResetUserData(ctx context.Context) error
+	ResetUserData(ctx context.Context, types ...core.DataType) error
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
 	GetAccessData(ctx context.Context) (*core.ManagerData, error)
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
@@ -33,7 +35,7 @@ type Local interface {
 	AddAccessData(ctx context.Context, masterPsw string, user *core.User) error
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
-	ResetUserData(ctx context.Context) error
+	ResetUserData(ctx context.Context, types ...core.DataType) error
 	AddTryPasword(ctx context.Context, count int) error
 	GetTryPasword(ctx context.Context) (int, error)
 }
@@ -48,7 +50,7 @@ type local struct {
 func (l *local) AddTryPasword(ctx context.Context, count int) error {
 	key := l.config.Server().SecretKey(l.config.Client().Version())
 	count++
-	manager := core.NewManager().AddEncription(l.config.Encryptor())
+	manager := core.NewManager(nil).AddEncription(l.config.Encryptor())
 	err := manager.
 		Set().MetaData("trypassword").
 		Set().TryPassword(key, count)
@@ -91,13 +93,13 @@ func (l *local) GetTryPasword(ctx context.Context) (int, error) {
 }
 
 // ResetUserData implements Local.
-func (l *local) ResetUserData(ctx context.Context) error {
-	return l.store.ResetUserData(ctx)
+func (l *local) ResetUserData(ctx context.Context, types ...core.DataType) error {
+	return l.store.ResetUserData(ctx, types...)
 }
 
 // AddAccessData implements Local.
 func (l *local) AddAccessData(ctx context.Context, masterPsw string, user *core.User) error {
-	manager := core.NewManager()
+	manager := core.NewManager(nil)
 	manager.AddEncription(l.config.Encryptor()).
 		Set().MetaData("access")
 	err := manager.Set().AccessData(masterPsw, user)
@@ -135,13 +137,13 @@ func (l *local) GetAccessData(ctx context.Context, masterPsw string) (*core.User
 }
 
 // AddData implements localStore.
-func (*local) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error) {
-	panic("unimplemented")
+func (l *local) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error) {
+	return l.store.AddData(ctx, data...)
 }
 
 // ChangeData implements localStore.
-func (*local) ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error) {
-	panic("unimplemented")
+func (l *local) ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error) {
+	return l.store.ChangeData(ctx, data...)
 }
 
 // SearchData implements localStore.

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func setVersionHash(b []byte) string {
@@ -42,6 +44,19 @@ type setter struct {
 	data *manager
 }
 
+// File implements Setter.
+func (s *setter) File(masterPsw string, form *FileForm) error {
+	if s.data.encryptor == nil {
+		return errors.New("need add encrypter")
+	}
+	d, err := json.Marshal(form)
+	if err != nil {
+		return err
+	}
+	s.data.infoData.MetaData = form.MetaData
+	return s.setData(masterPsw, DataTypeFile, d)
+}
+
 // TryPassword implements Setter.
 func (s *setter) TryPassword(masterPsw string, count int) error {
 	if s.data.encryptor == nil {
@@ -51,7 +66,7 @@ func (s *setter) TryPassword(masterPsw string, count int) error {
 	if err != nil {
 		return err
 	}
-	return s.setData(masterPsw, DataTypeTryPassword, d)
+	return s.setData(masterPsw, DataTypeTryEnterPassword, d)
 }
 
 func (s *setter) isCreating() bool {
@@ -82,7 +97,7 @@ func (s *setter) setData(masterPsw string, dType DataType, d []byte) error {
 }
 
 // BankCard implements Setter.
-func (s *setter) BankCard(masterPsw string, card *BankCardFomm) error {
+func (s *setter) BankCard(masterPsw string, card *BankCardForm) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
@@ -90,6 +105,7 @@ func (s *setter) BankCard(masterPsw string, card *BankCardFomm) error {
 	if err != nil {
 		return err
 	}
+	s.data.infoData.MetaData = card.Metadata
 	return s.setData(masterPsw, DataTypeCard, d)
 }
 
@@ -102,15 +118,25 @@ func (s *setter) Password(masterPsw string, psw *PasswordForm) error {
 	if err != nil {
 		return err
 	}
+	id := s.data.infoData.ID
+	if id == nil {
+		i := uuid.New()
+		s.data.infoData.ID = &i
+	}
+	s.data.infoData.MetaData = psw.MetaData
 	return s.setData(masterPsw, DataTypePassword, d)
 }
 
 // Text implements Setter.
-func (s *setter) Text(masterPsw string, text string) error {
+func (s *setter) Text(masterPsw string, text *TextFomm) error {
 	if s.data.encryptor == nil {
 		return errors.New("need add encrypter")
 	}
-	d := []byte(text)
+	d, err := json.Marshal(text)
+	if err != nil {
+		return err
+	}
+	s.data.infoData.MetaData = text.MetaData
 	return s.setData(masterPsw, DataTypeText, d)
 }
 
@@ -157,6 +183,7 @@ func (g *getter) Data(masterPsw string) ([]byte, error) {
 	if g.data.data == nil {
 		return nil, errors.New("data is nil")
 	}
+
 	bs, err := g.data.encryptor.Decrypt([]byte(masterPsw), g.data.data)
 	if err != nil {
 		return nil, err
@@ -186,9 +213,16 @@ func (d *manager) Set() Setter {
 }
 
 // Create new manager for store.
-func NewManager() Manager {
+func NewManager(userID *uuid.UUID, types ...DataType) Manager {
+	var dtype DataType
+	if len(types) > 0 {
+		dtype = types[0]
+	}
 	data := &manager{
-		infoData: &InfoData{},
+		infoData: &InfoData{
+			UserID:   userID,
+			DataType: string(dtype),
+		},
 	}
 	data.getter = &getter{
 		data: data,

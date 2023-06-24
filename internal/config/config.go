@@ -31,6 +31,7 @@ type ClientConfig interface {
 	FilePath() string
 	Version() string
 	SrvAddress() string
+	SrvAddressProd() string
 }
 
 type ServerConfig interface {
@@ -93,9 +94,15 @@ func (c *configs) Client() ClientConfig {
 }
 
 type clientConfig struct {
-	LocalstorePath string `env:"client_localstore_path" envDefault:"datastore"`
-	ServerAddress  string `env:"server_address" envDefault:":3200"`
-	version        string
+	LocalstorePath    string `env:"client_localstore_path" envDefault:"datastore"`
+	ServerAddress     string `env:"server_address" envDefault:":3200"`
+	ServerAddressProd string `env:"server_address" envDefault:":3400"`
+	version           string
+}
+
+// SrvAddressProd implements ClientConfig.
+func (c *clientConfig) SrvAddressProd() string {
+	return c.ServerAddressProd
 }
 
 // Version implements ClientConfig.

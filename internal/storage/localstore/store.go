@@ -7,10 +7,10 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
-	"log"
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
@@ -22,7 +22,8 @@ type Store interface {
 	GetUserByEmail(ctx context.Context, email string) (*core.User, error)
 	AddUser(ctx context.Context, user *core.User) (*core.User, error)
 	ChangeUser(ctx context.Context, user *core.User) (*core.User, error)
-
+	Size() int64
+	LastSync() string
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
 	GetAccessData(ctx context.Context) (*core.ManagerData, error)
 	AddAccessData(ctx context.Context, data *core.ManagerData) error
@@ -30,7 +31,7 @@ type Store interface {
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	Close() error
-	ResetUserData(ctx context.Context) error
+	ResetUserData(ctx context.Context, types ...core.DataType) error
 	AddTryPasword(ctx context.Context, data *core.ManagerData) error
 	GetTryPasword(ctx context.Context) (*core.ManagerData, error)
 }
@@ -39,6 +40,21 @@ type store struct {
 	data     *core.DataGob
 	filePath string
 	config   config.Config
+	size     int64
+	lastSync *time.Time
+}
+
+// SLastSync implements Store.
+func (s *store) LastSync() string {
+	if s.lastSync == nil {
+		return "never"
+	}
+	return s.lastSync.Local().Format("2006-01-02 15:04")
+}
+
+// Size implements Store.
+func (s store) Size() int64 {
+	return s.size
 }
 
 // AddAccessData implements Store.
@@ -59,7 +75,7 @@ func (s *store) AddAccessData(ctx context.Context, data *core.ManagerData) error
 		}
 	}
 	for _, d := range s.data.DataList {
-		if d.DataType == string(core.DataTypeTryPassword) {
+		if d.DataType == string(core.DataTypeTryEnterPassword) {
 			d = data
 			exists = true
 			break
@@ -74,6 +90,7 @@ func (s *store) AddAccessData(ctx context.Context, data *core.ManagerData) error
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -84,7 +101,7 @@ func (s *store) AddTryPasword(ctx context.Context, data *core.ManagerData) error
 	}
 	exists := false
 	for i, d := range s.data.DataList {
-		if d.DataType == string(core.DataTypeTryPassword) {
+		if d.DataType == string(core.DataTypeTryEnterPassword) {
 			s.data.DataList[i] = data
 			exists = true
 
@@ -111,7 +128,7 @@ func (s *store) GetTryPasword(ctx context.Context) (*core.ManagerData, error) {
 		return nil, errors.New("data is nil")
 	}
 	for _, d := range s.data.DataList {
-		if d.DataType == string(core.DataTypeTryPassword) {
+		if d.DataType == string(core.DataTypeTryEnterPassword) {
 			return d, nil
 		}
 	}
@@ -119,20 +136,34 @@ func (s *store) GetTryPasword(ctx context.Context) (*core.ManagerData, error) {
 }
 
 // ResetUserData implements Store.
-func (s *store) ResetUserData(ctx context.Context) error {
+func (s *store) ResetUserData(ctx context.Context, types ...core.DataType) error {
 	if s.data == nil {
 		return errors.New("data is nil")
 	}
-	for i, d := range s.data.DataList {
-		if d.DataType == string(core.DataTypeUser) || d.DataType == string(core.DataTypeTryPassword) {
-			s.data.DataList[i] = s.data.DataList[len(s.data.DataList)-1]
-			s.data.DataList = s.data.DataList[:len(s.data.DataList)-1]
-			log.Println(i, "TRY RESET DATA")
+	deleteIndexes := make([]int, 0)
+	check := func(i int) bool {
+		for _, n := range deleteIndexes {
+			if i == n {
+				return true
+			}
+		}
+		return false
+	}
+	newList := make([]*core.ManagerData, 0)
 
-			break
+	for _, t := range types {
+		for i, d := range s.data.DataList {
+			if string(t) == d.DataType {
+				deleteIndexes = append(deleteIndexes, i)
+			}
 		}
 	}
-	// log.Println("RESET DATA")
+	for i, d := range s.data.DataList {
+		if !check(i) {
+			newList = append(newList, d)
+		}
+	}
+	s.data.DataList = newList
 	err := s.saveToFile()
 	if err != nil {
 		return err
@@ -182,11 +213,11 @@ func (s *store) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core
 		return nil, errors.New("data is nil")
 	}
 
-	newID := uuid.New()
-
 	for _, d := range data {
+		newID := uuid.New()
 		d.ID = &newID
 	}
+
 	s.data.DataList = append(s.data.DataList, data...)
 	err := s.saveToFile()
 	if err != nil {
@@ -196,13 +227,26 @@ func (s *store) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core
 }
 
 // AddUser implements Store.
-func (store) AddUser(ctx context.Context, user *core.User) (*core.User, error) {
+func (a *store) AddUser(ctx context.Context, user *core.User) (*core.User, error) {
 	panic("unimplemented")
 }
 
 // ChangeData implements Store.
-func (store) ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error) {
-	panic("unimplemented")
+func (s *store) ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error) {
+	changed := 0
+	for i, d := range s.data.DataList {
+		for _, e := range data {
+			if d.InfoData.ID == e.InfoData.ID {
+				s.data.DataList[i] = e
+				changed++
+			}
+		}
+	}
+	err := s.saveToFile()
+	if err != nil {
+		return 0, err
+	}
+	return changed, nil
 }
 
 // ChangeUser implements Store.
@@ -235,15 +279,15 @@ func (s *store) GetData(ctx context.Context, userID string, types ...string) ([]
 	}
 	res := make([]*core.ManagerData, 0)
 	for _, d := range s.data.DataList {
-		// log.Println(d)
-		res = append(res, d)
-		// if d.UserID == nil {
-		// 	continue
-		// 	// return nil, errors.New("userID is nil")
-		// }
-		// if d.UserID.String() == userID && s.containsTypes(d.DataType, types...) {
-		// 	res = append(res, d)
-		// }
+		if d.UserID == nil {
+			continue
+			// return nil, errors.New("userID is nil")
+		}
+		// res = append(res, d)
+		id := d.UserID.String()
+		if id == userID && s.containsTypes(d.DataType, types...) {
+			res = append(res, d)
+		}
 	}
 	return res, nil
 }
@@ -260,17 +304,24 @@ func (s *store) saveToFile() error {
 	if err != nil {
 		return err
 	}
-	defer dataFile.Close()
+
 	data := s.data
 	enc := gob.NewEncoder(dataFile)
 	err = enc.Encode(&data)
 	if err != nil {
 		return err
 	}
+	info, err := dataFile.Stat()
+
+	if err != nil {
+		return err
+	}
+	s.size = info.Size()
 	err = os.Remove(s.filePath)
 	if err != nil {
 		s.config.Logger().Error(err)
 	}
+	dataFile.Close()
 	err = os.Rename("."+s.filePath, s.filePath)
 	if err != nil {
 		return err
@@ -296,10 +347,16 @@ func New(conf config.Config) (Store, error) {
 		if err != nil {
 			return nil, err
 		}
+		info, err := dataFile.Stat()
+		if err != nil {
+			return nil, err
+		}
+		size := info.Size()
 		return &store{
 			data:     &data,
 			config:   conf,
 			filePath: filePath,
+			size:     size,
 		}, nil
 	}
 	defer dataFile.Close()
@@ -309,9 +366,15 @@ func New(conf config.Config) (Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	info, err := dataFile.Stat()
+	if err != nil {
+		return nil, err
+	}
+	size := info.Size()
 	return &store{
 		data:     data,
 		filePath: filePath,
 		config:   conf,
+		size:     size,
 	}, nil
 }

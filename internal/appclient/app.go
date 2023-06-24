@@ -20,11 +20,13 @@ import (
 
 type ApplicationClient interface {
 	Run() error
+	AppInfo() *core.AppInfo
 	Stop()
 	Pages() *tview.Pages
 	Repository() repository.Repository
 	Config() config.Config
 	User() *core.User
+	App() *tview.Application
 }
 
 type client struct {
@@ -39,6 +41,17 @@ type client struct {
 	// button     *tview.Button
 	repository repository.Repository
 	config     config.Config
+}
+
+// AppInfo implements ApplicationClient.
+func (c *client) AppInfo() *core.AppInfo {
+	info := core.NewAppInfo(c.config.Client(), c.repository.Store())
+	return info
+}
+
+// App implements ApplicationClient.
+func (c *client) App() *tview.Application {
+	return c.app
 }
 
 // User implements ApplicationClient.
@@ -116,9 +129,8 @@ func (c *client) startClient() error {
 	resetAccessPage := page.NewGetAccessPage(c, "GetAccess", "back")
 	loginPage := page.NewLoginPage(c, "Login", "close")
 
-	accessiblePage := page.NewAccessiblePage(c, "AccessiblePage", "close")
-	// accessiblePage.Show(ctx, true)
-	// return nil
+	accessiblePage := page.NewAccessiblePage(c.config, c, "AccessiblePage", "close")
+
 	loginPage.
 		Next(func(user *core.User) {
 			// log.Println(puk)

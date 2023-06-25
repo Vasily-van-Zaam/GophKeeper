@@ -39,7 +39,7 @@ const fieldWidth = 50
 func (a *accessForm) NewFormLogin(
 	pageName, buttonNameBack string, login func(password string), reset, closed func()) {
 	form := tview.NewForm().SetFocus(1)
-	a.masterPassword = "Psw123!@#"
+	a.masterPassword = ""
 	form.AddInputField("password", a.masterPassword, fieldWidth, nil, a.changePassword)
 	form.AddButton(buttonNameBack, func() {
 		a.pages.RemovePage(pageName)

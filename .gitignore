@@ -20,6 +20,9 @@
 # Go workspace file
 go.work
 __debug_bin
+__debug_bin
 datastore
 .DS_Store
 main
+database.gob
+*.gob

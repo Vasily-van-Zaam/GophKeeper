@@ -104,7 +104,7 @@ func (c *configs) Client() ClientConfig {
 type clientConfig struct {
 	LocalstorePath    string `env:"client_localstore_path" envDefault:"datastore"`
 	ServerAddress     string `env:"server_address" envDefault:":3200"`
-	ServerAddressProd string `env:"server_address" envDefault:":3400"`
+	ServerAddressProd string `env:"server_address_prod" envDefault:":3400"`
 	version           string
 }
 

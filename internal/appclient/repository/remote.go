@@ -166,16 +166,16 @@ func NewRemote(conf config.Config) remoteStore {
 		log.Println("connection to prod err", err)
 	}
 	client := server.NewGrpcClient(conn)
-	_, err = client.Ping(context.Background(), nil)
+	// _, err = client.Ping(context.Background(), nil)
 
-	if err != nil {
-		conn, err = grpc.Dial(conf.Client().SrvAddressProd(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// if err != nil {
+	// 	conn, err = grpc.Dial(conf.Client().SrvAddressProd(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 
-		if err != nil {
-			log.Println("connection to prod err", err)
-		}
-		client = server.NewGrpcClient(conn)
-	}
+	// 	if err != nil {
+	// 		log.Println("connection to prod err", err)
+	// 	}
+	// 	client = server.NewGrpcClient(conn)
+	// }
 
 	return &remote{
 		config: conf,

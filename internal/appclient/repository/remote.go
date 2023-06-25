@@ -21,6 +21,7 @@ type remoteStore interface {
 	GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error)
 	Ping(ctx context.Context) (bool, error)
 	Close() error
+	AddData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	// SyncData(ctx context.Context) ()
 }
 
@@ -29,6 +30,36 @@ type remote struct {
 	conn   *grpc.ClientConn
 	client server.GrpcClient
 	auth   core.Auth
+}
+
+// AddData implements remoteStore.
+func (r *remote) AddData(ctx context.Context, data ...*core.ManagerData) (int, error) {
+	var (
+		err          error
+		grpcDataList = make([]*server.ManagerData, len(data))
+	)
+
+	for i, data := range data {
+		grpcDataList[i] = &server.ManagerData{
+			Data:      data.Data,
+			ID:        data.ID.String(),
+			DataType:  data.DataType,
+			MetaData:  data.MetaData,
+			UserID:    data.UserID.String(),
+			Hash:      data.Hash,
+			UpdatedAt: data.UpdatedAt.Format(time.RFC3339),
+			CreatedAt: data.CreatedAt.Format(time.RFC3339),
+		}
+	}
+
+	resp, err := r.client.AddData(ctx, &server.AddDataRequest{
+		List: grpcDataList,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	return int(resp.Added), nil
 }
 
 // Close implements Remote.
@@ -90,6 +121,7 @@ func (r *remote) GetAccess(ctx context.Context, form *core.AccessForm) ([]byte, 
 func (r *remote) GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error) {
 	resp, err := r.client.GetData(ctx, &server.GetDataRequest{
 		DataTypes: types,
+		WithData:  true,
 	})
 	if err != nil {
 		return nil, err
@@ -97,10 +129,12 @@ func (r *remote) GetData(ctx context.Context, types ...string) ([]*core.ManagerD
 	data := make([]*core.ManagerData, len(resp.List))
 	for i, d := range resp.List {
 		uID, _ := uuid.Parse(d.UserID)
+		id, _ := uuid.Parse(d.ID)
 		cDate, _ := time.Parse(time.RFC3339, d.CreatedAt)
 		uDate, _ := time.Parse(time.RFC3339, d.UpdatedAt)
 		data[i] = &core.ManagerData{
 			InfoData: core.InfoData{
+				ID:        &id,
 				MetaData:  d.MetaData,
 				UserID:    &uID,
 				Local:     d.Local,

@@ -3,7 +3,6 @@ package page
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
@@ -68,21 +67,52 @@ func (a *accessiblePage) Show(ctx context.Context, show bool) AppPage {
 	})
 
 	appInfo := a.client.AppInfo()
+	userID := a.client.User().ID.String()
+	localData, err := a.client.Repository().Local().GetData(ctx, userID)
+
+	if err != nil {
+		component.ModalError(err, a.name, a.client.Pages())
+	}
 
 	buttonSyncServer := tview.NewButton("🔄").SetSelectedFunc(func() {
-		resp, err := a.client.Repository().Remote().GetData(a.addAuthContext(ctx))
-		if err != nil {
-			component.ModalError(err, a.name, a.client.Pages())
-			return
-		}
-		component.ModalError(errors.New(fmt.Sprint(resp)), a.name, a.client.Pages())
+		component.ModalInfo("Synchronize data with the server?", a.name, a.client.Pages(), func() {
+			remoteData, errGetDataInfo := a.client.Repository().Remote().GetData(a.addAuthContext(ctx))
+			if errGetDataInfo != nil {
+				component.ModalError(errGetDataInfo, a.name, a.client.Pages())
+				return
+			}
+			compare, newRemote, newLocal := a.client.CompareDataSync(localData, remoteData)
+
+			a.client.Pages().RemovePage("ModalInfo")
+
+			component.ModalInfo(
+				fmt.Sprintf("differences %v, remote %v local %v, update?", len(compare),
+					len(newRemote), len(newLocal)), a.name, a.client.Pages(), func() {
+					if len(newRemote) != 0 {
+						list, err := a.client.Repository().Local().AddData(ctx, newRemote...)
+						if err != nil {
+							component.ModalError(err, a.name, a.client.Pages())
+							return
+						}
+						localData = append(localData, list...)
+						a.client.Pages().RemovePage(a.name)
+						a.Show(ctx, true)
+					}
+					if len(newLocal) != 0 {
+						_, err = a.client.Repository().Remote().AddData(ctx, newLocal...)
+						if err != nil {
+							component.ModalError(err, a.name, a.client.Pages())
+							return
+						}
+						a.client.Pages().RemovePage(a.name)
+						a.Show(ctx, true)
+					}
+				})
+		})
 	})
 	buttonSyncServer.SetBackgroundColorActivated(tcell.ColorIndianRed)
-	userID := a.client.User().ID.String()
 
-	data, err := a.client.Repository().Local().GetData(ctx, userID)
-
-	frame := component.NewGridAccessible(data, appInfo, func(m *core.ManagerData) {
+	frame := component.NewGridAccessible(localData, appInfo, func(m *core.ManagerData) {
 		editorPageName := fmt.Sprintf("Edit %v", m.InfoData.DataType)
 		a.client.Pages().RemovePage(a.name)
 		edit := NewEditorPage(

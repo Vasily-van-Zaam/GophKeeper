@@ -263,12 +263,17 @@ func (e *editorPage) Show(ctx context.Context, show bool) AppPage {
 				defer file.Close()
 
 				// Get the file size
-				stat, err := file.Stat()
-				if err != nil {
-					component.ModalError(err, e.name, e.client.Pages())
+				stat, errSt := file.Stat()
+				if errSt != nil {
+					component.ModalError(errSt, e.name, e.client.Pages())
 					return
 				}
 				size := stat.Size()
+
+				if size > 2560000 {
+					component.ModalError(errors.New("File cannot exceed 2.56MB"), e.name, e.client.Pages())
+					return
+				}
 				// Read the file into a byte slice
 				bs := make([]byte, size)
 				_, err = bufio.NewReader(file).Read(bs)

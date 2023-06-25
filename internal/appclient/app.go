@@ -27,20 +27,16 @@ type ApplicationClient interface {
 	Config() config.Config
 	User() *core.User
 	App() *tview.Application
+	CompareDataSync(local []*core.ManagerData, remote []*core.ManagerData) ([]*core.CopmareData, []*core.ManagerData, []*core.ManagerData)
 }
 
 type client struct {
-	pages *tview.Pages
-	user  *core.User
-	// form       *tview.Form
-	app *tview.Application
-	// modal      *tview.Modal
-	// flex       *tview.Flex
-	// textView   *tview.TextView
-	// list       *tview.List
-	// button     *tview.Button
-	repository repository.Repository
-	config     config.Config
+	pages       *tview.Pages
+	user        *core.User
+	managerData []*core.ManagerData
+	app         *tview.Application
+	repository  repository.Repository
+	config      config.Config
 }
 
 // AppInfo implements ApplicationClient.
@@ -95,12 +91,8 @@ func New(conf config.Config) (ApplicationClient, error) {
 	}
 
 	return &client{
-		pages: tview.NewPages(),
-		app:   tview.NewApplication(),
-		// flex:       tview.NewFlex(),
-		// textView:   tview.NewTextView(),
-		// list:       tview.NewList(),
-		// modal:      tview.NewModal(),
+		pages:      tview.NewPages(),
+		app:        tview.NewApplication(),
 		repository: repository.New(conf, lstore),
 		config:     conf,
 	}, nil
@@ -173,4 +165,47 @@ func (c *client) startClient() error {
 		})
 	loginPage.Show(ctx, d != nil)
 	return nil
+}
+
+// Compare data sync by hash.
+func (*client) CompareDataSync(
+	local []*core.ManagerData,
+	remote []*core.ManagerData,
+) ([]*core.CopmareData, []*core.ManagerData, []*core.ManagerData) {
+	comapare := make([]*core.CopmareData, 0)
+
+	findNewData := func(d *core.ManagerData, data []*core.ManagerData) []*core.ManagerData {
+		list := make([]*core.ManagerData, 0)
+
+		for _, check := range data {
+			if d.InfoData.ID.String() != check.InfoData.ID.String() {
+				list = append(list, check)
+			}
+		}
+
+		return list
+	}
+	newRemoteData := remote
+	newLocalData := local
+	for _, ld := range local {
+		for _, rd := range newRemoteData {
+			lID := ld.InfoData.ID.String()
+			rID := rd.InfoData.ID.String()
+			lHash := ld.InfoData.Hash
+			rHash := rd.InfoData.Hash
+			check := lID == rID && lHash != rHash
+			if check {
+				comapare = append(comapare, &core.CopmareData{
+					Local:  ld,
+					Remote: rd,
+				})
+			}
+		}
+		newRemoteData = findNewData(ld, newRemoteData)
+	}
+	for _, rd := range remote {
+		newLocalData = findNewData(rd, newLocalData)
+	}
+
+	return comapare, newRemoteData, newLocalData
 }

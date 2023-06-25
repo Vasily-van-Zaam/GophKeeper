@@ -22,8 +22,8 @@ func (*service) SearchData(ctx context.Context, search string, types ...string) 
 }
 
 // AddData implements Service.
-func (*service) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error) {
-	panic("unimplemented")
+func (s *service) AddData(ctx context.Context, data ...*core.ManagerData) (int, error) {
+	return s.store.AddData(ctx, data...)
 }
 
 // ChangeData implements Service.

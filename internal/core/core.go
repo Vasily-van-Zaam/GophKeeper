@@ -72,6 +72,10 @@ type ManagerData struct {
 	InfoData
 }
 
+func (m *ManagerData) String() string {
+	return fmt.Sprintf("ID: %s, HASH: %s", m.ID.String(), m.Hash)
+}
+
 // The InfoData to save the database.
 type InfoData struct {
 	ID       *uuid.UUID `json:"id"`
@@ -169,4 +173,9 @@ func NewAppInfo(clientConf ClientConfig, store LocalStoreInfo) *AppInfo {
 }
 
 type SyncInfo struct {
+}
+
+type CopmareData struct {
+	Local  *ManagerData
+	Remote *ManagerData
 }

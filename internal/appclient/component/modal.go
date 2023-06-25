@@ -12,11 +12,27 @@ func ModalError(err error, backPage string, pages *tview.Pages) {
 	modal.AddButtons([]string{"ok"}).
 		SetText(status.Message()).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			pages.RemovePage("ModalErr")
+			pages.RemovePage("ModalError")
 		})
 
-	pages.AddPage("ModalErr", modal, true, true)
+	pages.AddPage("ModalError", modal, true, true)
 }
+func ModalInfo(title string, backPage string, pages *tview.Pages, on func()) {
+	modal := tview.NewModal()
+
+	modal.AddButtons([]string{"cancel", "ok"}).
+		SetText(title).
+		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
+			pages.RemovePage("ModalInfo")
+			if buttonIndex == 0 {
+				return
+			}
+			on()
+		})
+	pages.AddPage("ModalInfo", modal, true, true)
+	// modal.
+}
+
 func ModalEnterPassword(title string, backPage string, pages *tview.Pages, on func(psw string)) {
 	password := ""
 	form := tview.NewForm().AddInputField("Password", password, 1000,
@@ -89,15 +105,21 @@ func ModalNewDownloadFile(title, fileName string, backPage string, pages *tview.
 		SetPrimitive(form).SetBorders(0, 2, 2, 2, 10, 10)
 
 	pages.AddPage(title, frame, true, true)
-	// form := tview.NewForm().AddInputField("path file to save", "", 1000,
-	// 	func(textToCheck string, lastChar rune) bool {
-	// 		return true
-	// 	}, func(text string) {}).AddButton("Save", func() {
-	// 	pages.SwitchToPage(backPage)
-	// })
-	// frame := tview.NewFrame(tview.NewBox().SetBackgroundColor(tcell.ColorBlue)).
-	// 	AddText(title, true, 1, tcell.ColorRed).
-	// 	SetPrimitive(form).SetBorders(10, 2, 2, 2, 10, 10)
+}
 
-	// pages.AddPage("ModalErr", frame, true, true)
+func ModalTrtySync(title string, backPage string, pages *tview.Pages, on func(psw string)) {
+	password := ""
+	form := tview.NewForm().AddInputField("Password", password, 1000,
+		func(textToCheck string, lastChar rune) bool {
+			return true
+		}, func(text string) {
+			password = text
+		}).AddButton("Enter Password", func() {
+		on(password)
+		pages.SwitchToPage(backPage)
+	})
+	frame := tview.NewFrame(tview.NewBox().SetBackgroundColor(tcell.ColorBlue)).
+		AddText(title, true, 1, tcell.ColorRed).
+		SetPrimitive(form).SetBorders(10, 2, 2, 2, 10, 10)
+	pages.AddPage("ModalPsw", frame, true, true)
 }

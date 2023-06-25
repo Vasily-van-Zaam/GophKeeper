@@ -17,8 +17,10 @@ func (s *store) AddData(ctx context.Context, data ...*core.ManagerData) ([]*core
 	}
 
 	for _, d := range data {
-		newID := uuid.New()
-		d.ID = &newID
+		if d.ID == nil {
+			newID := uuid.New()
+			d.ID = &newID
+		}
 	}
 
 	s.data.DataList = append(s.data.DataList, data...)

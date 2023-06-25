@@ -13,7 +13,7 @@ import (
 
 type ManagerService interface {
 	GetData(ctx context.Context, withData bool, types ...string) ([]*core.ManagerData, error)
-	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
+	AddData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	SearchData(ctx context.Context, search string, types ...string) ([]*core.ManagerData, error)
 }

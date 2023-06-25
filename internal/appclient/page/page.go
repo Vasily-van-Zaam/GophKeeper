@@ -18,6 +18,10 @@ type applicationClient interface {
 	Config() config.Config
 	User() *core.User
 	App() *tview.Application
+	CompareDataSync(
+		local []*core.ManagerData,
+		remote []*core.ManagerData,
+	) ([]*core.CopmareData, []*core.ManagerData, []*core.ManagerData)
 }
 
 type AppPage interface {

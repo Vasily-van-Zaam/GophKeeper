@@ -8,6 +8,8 @@ https://github.com/Vasily-van-Zaam/GophKeeper/blob/server/GophKeeper.drawio.svg
 
 ![DRAW](https://github.com/Vasily-van-Zaam/GophKeeper/blob/server/GophKeeper.drawio.svg?raw=true)
 
+## Для подтверждения почты пароль статичный - 1234
+
 GOOS=windows GOARCH=386 go build -o client-win-386.exe ./cmd/client  
 GOOS=windows GOARCH=amd64 go build -o client-win-amd64.exe ./cmd/client
 GOOS=darwin GOARCH=amd64 go build -o client-macos-amd64 ./cmd/client

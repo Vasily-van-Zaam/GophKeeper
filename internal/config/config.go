@@ -10,6 +10,7 @@ import (
 type Encryptor interface {
 	Encrypt(secret []byte, userData []byte) ([]byte, error)
 	Decrypt(secret []byte, data []byte) ([]byte, error)
+	GeneratePrivateKey(size int) (string, error)
 }
 
 type Logger interface {
@@ -36,16 +37,23 @@ type ClientConfig interface {
 
 type ServerConfig interface {
 	SecretKey(version string) string
-	RunAddrss() string
+	RunAddress() string
+	DataBaseDNS() string
 	// isRefresh == true  then the refresh  expiration date is returned
 	// if true, then the access expiration date is returned
 	Expires(isRefresh ...bool) int
 }
 type serverConfig struct {
 	SecretKeys        map[string]string `env:"server_secret_keys" envDefault:"0.0.0:secret_key_version_0.0.0,0.0.1:secret_key_version_0.0.1"`
-	RunAddress        string            `env:"server_run_address" envDefault:":3200"`
+	RunAddressURL     string            `env:"server_run_address" envDefault:":3200"`
 	AccessExpiresMin  int               `env:"access_expires_min" envDefault:"10"`
 	RefreshExpiresMin int               `env:"refresh_expires_min" envDefault:"43200"`
+	DataBaseURL       string            `env:"data_base_dns" envDefault:"postgres://postgres:postgrespassword@127.0.1:5439/keeper"`
+}
+
+// DataBase implements ServerConfig.
+func (s *serverConfig) DataBaseDNS() string {
+	return s.DataBaseURL
 }
 
 // Expires implements ServerConfig.
@@ -57,8 +65,8 @@ func (c *serverConfig) Expires(isRefresh ...bool) int {
 }
 
 // RunAddrss implements ServerConfig.
-func (c *serverConfig) RunAddrss() string {
-	return c.RunAddress
+func (c *serverConfig) RunAddress() string {
+	return c.RunAddressURL
 }
 
 // GetSecretKey implements ServerConfig.

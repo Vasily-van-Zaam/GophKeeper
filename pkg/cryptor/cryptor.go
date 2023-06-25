@@ -8,12 +8,14 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/hex"
 )
 
 // Implements encript interface!
 type Encryptor interface {
 	Encrypt(secret []byte, userData []byte) ([]byte, error)
 	Decrypt(secret []byte, data []byte) ([]byte, error)
+	GeneratePrivateKey(size int) (string, error)
 }
 
 type cryptor struct{}
@@ -81,4 +83,13 @@ func generateRandom(size int) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func (cryptor) GeneratePrivateKey(size int) (string, error) {
+	b, err := generateRandom(size)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(b), nil
 }

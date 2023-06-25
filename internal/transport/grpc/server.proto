@@ -54,13 +54,22 @@ message ManagerData {
     bytes Data = 9;
 }
 
+message ChangeDataRequest {
+    repeated ManagerData list = 1;
+}
+
+message ChangeDataResponse {
+    int32 added = 1;
+    string error = 2;
+}
+
 // # REQUEST
 // Add data
-message AddNewDataRequest {
+message AddDataRequest {
     repeated ManagerData list = 1;
 }
 // # RESPONSE
-message AddNewDataResponse {
+message AddDataResponse {
     int32 added = 1;
     string error = 2;
 }
@@ -69,6 +78,7 @@ message AddNewDataResponse {
 message GetDataRequest {
     repeated string DataTypes = 1;
     string meta = 2;
+    bool withData = 3;
 
 }
 // # RESPONSE
@@ -112,7 +122,8 @@ service Grpc {
 
     rpc Ping(PingRequest) returns (PingResponse);
     rpc CheckChangesData(CheckChangesDataRequest) returns (CheckChangesDataResponse);
-    rpc AddNewData(AddNewDataRequest) returns (AddNewDataResponse);
+    rpc AddData(AddDataRequest) returns (AddDataResponse);
+    rpc ChangeData(ChangeDataRequest) returns (ChangeDataResponse);
     rpc GetData(GetDataRequest) returns (GetDataResponse);
 }
 

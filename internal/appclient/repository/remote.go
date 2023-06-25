@@ -21,6 +21,7 @@ type remoteStore interface {
 	GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error)
 	Ping(ctx context.Context) (bool, error)
 	Close() error
+	// SyncData(ctx context.Context) ()
 }
 
 type remote struct {
@@ -93,7 +94,7 @@ func (r *remote) GetData(ctx context.Context, types ...string) ([]*core.ManagerD
 	if err != nil {
 		return nil, err
 	}
-	data := make([]*core.ManagerData, 0, len(resp.List))
+	data := make([]*core.ManagerData, len(resp.List))
 	for i, d := range resp.List {
 		uID, _ := uuid.Parse(d.UserID)
 		cDate, _ := time.Parse(time.RFC3339, d.CreatedAt)

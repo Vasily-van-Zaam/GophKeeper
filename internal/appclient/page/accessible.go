@@ -2,6 +2,8 @@ package page
 
 import (
 	"context"
+	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/appclient/component"
@@ -9,6 +11,7 @@ import (
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"google.golang.org/grpc/metadata"
 )
 
 type accessiblePage struct {
@@ -19,6 +22,16 @@ type accessiblePage struct {
 	back           func()
 	next           func(user *core.User)
 	conf           config.Config
+	auth           core.Auth
+}
+
+// Adding secreet info fore a remote request.
+func (a *accessiblePage) addAuthContext(ctx context.Context) context.Context {
+	md := metadata.New(map[string]string{core.CtxVersionClientKey: a.conf.Client().Version()})
+	ctx = metadata.NewIncomingContext(ctx, md)
+	userID, _ := a.auth.EncryptData(ctx, a.client.User().ID)
+	md.Append(core.CtxTokenKey, hex.EncodeToString(userID))
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
 // Close implements AppPage.
@@ -57,7 +70,12 @@ func (a *accessiblePage) Show(ctx context.Context, show bool) AppPage {
 	appInfo := a.client.AppInfo()
 
 	buttonSyncServer := tview.NewButton("🔄").SetSelectedFunc(func() {
-
+		resp, err := a.client.Repository().Remote().GetData(a.addAuthContext(ctx))
+		if err != nil {
+			component.ModalError(err, a.name, a.client.Pages())
+			return
+		}
+		component.ModalError(errors.New(fmt.Sprint(resp)), a.name, a.client.Pages())
 	})
 	buttonSyncServer.SetBackgroundColorActivated(tcell.ColorIndianRed)
 	userID := a.client.User().ID.String()
@@ -111,5 +129,6 @@ func NewAccessiblePage(
 		name:           pageName,
 		buttonNameBack: buttonNameBack,
 		conf:           conf,
+		auth:           core.NewAuth(conf),
 	}
 }

@@ -36,7 +36,7 @@ func TestNew(t *testing.T) {
 			path := conf.Client().FilePath()
 			refresh := conf.Server().Expires(true)
 			access := conf.Server().Expires()
-			addr := conf.Server().RunAddrss()
+			addr := conf.Server().RunAddress()
 			v000 := conf.Server().SecretKey("0.0.0")
 			v001 := conf.Server().SecretKey("0.0.1")
 			// v002 := conf.Server().SecretKey("0.0.2")

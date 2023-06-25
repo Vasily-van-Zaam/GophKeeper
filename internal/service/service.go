@@ -18,6 +18,7 @@ import (
 
 type Store interface {
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
+	GetDataInfo(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
 	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
@@ -31,7 +32,7 @@ type UserStore interface {
 }
 
 type Service interface {
-	GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error)
+	GetData(ctx context.Context, wihData bool, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	SearchData(ctx context.Context, search string, types ...string) ([]*core.ManagerData, error)

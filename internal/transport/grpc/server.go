@@ -12,7 +12,7 @@ import (
 )
 
 type ManagerService interface {
-	GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error)
+	GetData(ctx context.Context, withData bool, types ...string) ([]*core.ManagerData, error)
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
 	SearchData(ctx context.Context, search string, types ...string) ([]*core.ManagerData, error)
@@ -71,29 +71,14 @@ func (srv *server) unaryInterceptor(
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	// var token string
 	var clientVersion string
+	var userID string
 	md, ok := metadata.FromIncomingContext(ctx)
 	if ok {
-		values := md.Get("token")
-		client := md.Get("client_version")
-		if len(values) > 0 {
-			// token = values[0]
-		}
-		if len(client) > 0 {
-			clientVersion = client[0]
-		}
+		_ = srv.auth.DecryptByContextData(ctx, &userID)
 	}
-	// log.Println("===", token)
-	// if len(token) == 0 {
-	// 	return nil, status.Error(codes.Unauthenticated, "missing token")
-	// }
-	// if token != SecretToken {
-	// 	return nil, status.Error(codes.Unauthenticated, "invalid token")
-	// }
 
-	// TODO: здесь дописать код который расшифровывает токен
-	// получаем id юзера из токена и после добавляем его в metadata user
 	key := srv.config.Server().SecretKey(clientVersion)
-	md.Set("user", "uniq_user_id")
+	md.Set("userID", userID)
 	md.Set("server_key", key)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 	return handler(ctx, req)

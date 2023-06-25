@@ -285,10 +285,6 @@ func (e *editorPage) Show(ctx context.Context, show bool) AppPage {
 			})
 		})
 		formFile.HandlerDownloadFile(func(form *core.FileForm) {
-			var (
-			// file *os.File
-			// err  error
-			)
 			component.ModalNewDownloadFile("Save file", form.Name, e.name, e.client.Pages(), func(name, path string) {
 				file, err := os.Create(path + "/" + name)
 				if err != nil {

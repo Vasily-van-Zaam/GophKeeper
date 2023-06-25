@@ -23,5 +23,5 @@ func main() {
 	userSrvice := service.NewUserService(conf, store, cryptor.New())
 	srv := server.New(conf, userSrvice, managerService)
 
-	log.Fatal(srv.Run(conf.Server().RunAddrss()))
+	log.Fatal(srv.Run(conf.Server().RunAddress()))
 }

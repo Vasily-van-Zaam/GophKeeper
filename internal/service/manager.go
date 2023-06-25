@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
@@ -31,15 +32,36 @@ func (*service) ChangeData(ctx context.Context, data ...*core.ManagerData) (int,
 }
 
 // GetData implements Service.
-func (s *service) GetData(ctx context.Context, types ...string) ([]*core.ManagerData, error) {
-	data, ok := metadata.FromIncomingContext(ctx)
+func (s *service) GetData(ctx context.Context, wihData bool, types ...string) ([]*core.ManagerData, error) {
+	var (
+		err  error
+		resp = make([]*core.ManagerData, 0)
+	)
+
+	data, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
 		return nil, errors.New("err metadata")
 	}
-	data.Get("user")
+	userIDS := data.Get("userID")
+	userID := ""
+	log.Println(userIDS)
+	if len(userIDS) == 0 {
+		return nil, errors.New("error token metadata")
+	}
+	userID = userIDS[0]
+	if wihData {
+		resp, err = s.store.GetData(ctx, userID, types...)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
+	}
 
-	// s.store.GetData(ctx, ...types)
-	return nil, nil
+	resp, err = s.store.GetDataInfo(ctx, userID, types...)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 func New(conf config.Config, store Store, encript core.Encryptor) Service {

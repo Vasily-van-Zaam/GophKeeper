@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/config"
@@ -51,28 +52,31 @@ func (s *userService) ConfirmAccess(ctx context.Context, form *core.AccessForm) 
 
 	user, err = s.store.GetUserByEmail(ctx, form.Email)
 	if err != nil {
-		return nil, err
+		if strings.Contains(strings.ToLower(err.Error()), "no rows in result") {
+			privateKey, err := s.criptor.GeneratePrivateKey(255)
+			if err != nil {
+				return nil, err
+			}
+			user, err = s.store.AddUser(ctx, &core.User{
+				Email:      form.Email,
+				PrivateKey: privateKey,
+			})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
 	}
-
 	return user, nil
 }
 
 // Login implements UserService.
 func (s *userService) GetAccess(ctx context.Context, form *core.AccessForm) ([]byte, error) {
 	var (
-		err  error
-		user *core.User
+		err error
 	)
-	user, err = s.store.GetUserByEmail(ctx, form.Email)
-	if err != nil {
-		return nil, err
-	}
-	if user == nil {
-		_, err = s.store.AddUser(ctx, &core.User{})
-		if err != nil {
-			return nil, err
-		}
-	}
+
 	// TODO GENERATED CODE
 	const lifetime = 1
 	codeLifetime := time.Now().Add(time.Minute * lifetime).Format(time.RFC3339)

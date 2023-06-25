@@ -19,6 +19,7 @@ const (
 type Encryptor interface {
 	Encrypt(secret []byte, userData []byte) ([]byte, error)
 	Decrypt(secret []byte, data []byte) ([]byte, error)
+	GeneratePrivateKey(size int) (string, error)
 }
 
 // someData.Set().MetaData("some info").DataType("pasword").Data(hash_password, []bayte(PasswordForm{})).

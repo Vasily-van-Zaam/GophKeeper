@@ -23,7 +23,8 @@ const (
 	Grpc_ConfirmAccess_FullMethodName    = "/grpc.server.Grpc/ConfirmAccess"
 	Grpc_Ping_FullMethodName             = "/grpc.server.Grpc/Ping"
 	Grpc_CheckChangesData_FullMethodName = "/grpc.server.Grpc/CheckChangesData"
-	Grpc_AddNewData_FullMethodName       = "/grpc.server.Grpc/AddNewData"
+	Grpc_AddData_FullMethodName          = "/grpc.server.Grpc/AddData"
+	Grpc_ChangeData_FullMethodName       = "/grpc.server.Grpc/ChangeData"
 	Grpc_GetData_FullMethodName          = "/grpc.server.Grpc/GetData"
 )
 
@@ -35,7 +36,8 @@ type GrpcClient interface {
 	ConfirmAccess(ctx context.Context, in *ConfirmAccessRequest, opts ...grpc.CallOption) (*ConfirmAccessResponse, error)
 	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
 	CheckChangesData(ctx context.Context, in *CheckChangesDataRequest, opts ...grpc.CallOption) (*CheckChangesDataResponse, error)
-	AddNewData(ctx context.Context, in *AddNewDataRequest, opts ...grpc.CallOption) (*AddNewDataResponse, error)
+	AddData(ctx context.Context, in *AddDataRequest, opts ...grpc.CallOption) (*AddDataResponse, error)
+	ChangeData(ctx context.Context, in *ChangeDataRequest, opts ...grpc.CallOption) (*ChangeDataResponse, error)
 	GetData(ctx context.Context, in *GetDataRequest, opts ...grpc.CallOption) (*GetDataResponse, error)
 }
 
@@ -83,9 +85,18 @@ func (c *grpcClient) CheckChangesData(ctx context.Context, in *CheckChangesDataR
 	return out, nil
 }
 
-func (c *grpcClient) AddNewData(ctx context.Context, in *AddNewDataRequest, opts ...grpc.CallOption) (*AddNewDataResponse, error) {
-	out := new(AddNewDataResponse)
-	err := c.cc.Invoke(ctx, Grpc_AddNewData_FullMethodName, in, out, opts...)
+func (c *grpcClient) AddData(ctx context.Context, in *AddDataRequest, opts ...grpc.CallOption) (*AddDataResponse, error) {
+	out := new(AddDataResponse)
+	err := c.cc.Invoke(ctx, Grpc_AddData_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *grpcClient) ChangeData(ctx context.Context, in *ChangeDataRequest, opts ...grpc.CallOption) (*ChangeDataResponse, error) {
+	out := new(ChangeDataResponse)
+	err := c.cc.Invoke(ctx, Grpc_ChangeData_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +120,8 @@ type GrpcServer interface {
 	ConfirmAccess(context.Context, *ConfirmAccessRequest) (*ConfirmAccessResponse, error)
 	Ping(context.Context, *PingRequest) (*PingResponse, error)
 	CheckChangesData(context.Context, *CheckChangesDataRequest) (*CheckChangesDataResponse, error)
-	AddNewData(context.Context, *AddNewDataRequest) (*AddNewDataResponse, error)
+	AddData(context.Context, *AddDataRequest) (*AddDataResponse, error)
+	ChangeData(context.Context, *ChangeDataRequest) (*ChangeDataResponse, error)
 	GetData(context.Context, *GetDataRequest) (*GetDataResponse, error)
 	mustEmbedUnimplementedGrpcServer()
 }
@@ -130,8 +142,11 @@ func (UnimplementedGrpcServer) Ping(context.Context, *PingRequest) (*PingRespons
 func (UnimplementedGrpcServer) CheckChangesData(context.Context, *CheckChangesDataRequest) (*CheckChangesDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckChangesData not implemented")
 }
-func (UnimplementedGrpcServer) AddNewData(context.Context, *AddNewDataRequest) (*AddNewDataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddNewData not implemented")
+func (UnimplementedGrpcServer) AddData(context.Context, *AddDataRequest) (*AddDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddData not implemented")
+}
+func (UnimplementedGrpcServer) ChangeData(context.Context, *ChangeDataRequest) (*ChangeDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeData not implemented")
 }
 func (UnimplementedGrpcServer) GetData(context.Context, *GetDataRequest) (*GetDataResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetData not implemented")
@@ -221,20 +236,38 @@ func _Grpc_CheckChangesData_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Grpc_AddNewData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddNewDataRequest)
+func _Grpc_AddData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GrpcServer).AddNewData(ctx, in)
+		return srv.(GrpcServer).AddData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Grpc_AddNewData_FullMethodName,
+		FullMethod: Grpc_AddData_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GrpcServer).AddNewData(ctx, req.(*AddNewDataRequest))
+		return srv.(GrpcServer).AddData(ctx, req.(*AddDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Grpc_ChangeData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrpcServer).ChangeData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Grpc_ChangeData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrpcServer).ChangeData(ctx, req.(*ChangeDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -281,8 +314,12 @@ var Grpc_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Grpc_CheckChangesData_Handler,
 		},
 		{
-			MethodName: "AddNewData",
-			Handler:    _Grpc_AddNewData_Handler,
+			MethodName: "AddData",
+			Handler:    _Grpc_AddData_Handler,
+		},
+		{
+			MethodName: "ChangeData",
+			Handler:    _Grpc_ChangeData_Handler,
 		},
 		{
 			MethodName: "GetData",

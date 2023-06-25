@@ -2,30 +2,47 @@ package pstgql
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Vasily-van-Zaam/GophKeeper.git/internal/core"
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
-// GetUserByEmail implements Store.
-func (*store) GetUserByEmail(ctx context.Context, email string) (*core.User, error) {
-	id, _ := uuid.Parse("b8756ac3-00a8-4c7f-8590-faf52b0400d0")
-	id2, _ := uuid.Parse("b8756ac3-00a8-4c7f-8590-faf52b0400d1")
-	// log.Println(id)
-	if email == "test@mail.ru" {
-		return &core.User{
-			ID:         &id,
-			Email:      "test@mail.ru",
-			PrivateKey: "private_user_key",
-		}, nil
+// GetUserByEmail  returns user by email.
+func (s *store) GetUserByEmail(ctx context.Context, email string) (*core.User, error) {
+	var (
+		resp  = core.User{}
+		err   error
+		row   pgx.Row
+		query = queryUserByEmail()
+	)
+
+	row = s.db.QueryRow(ctx, query, email)
+
+	err = row.Scan(&resp.ID, &resp.Email, &resp.PrivateKey)
+	if err != nil {
+		return nil, err
 	}
-	if email == "test2@mail.ru" {
-		return &core.User{
-			ID:         &id2,
-			Email:      "test2@mail.ru",
-			PrivateKey: "private_user_key_2",
-		}, nil
+
+	return &resp, nil
+}
+
+// AddUser  insert new user.
+func (s *store) AddUser(ctx context.Context, user *core.User) (*core.User, error) {
+	var (
+		resp  = core.User{}
+		err   error
+		row   pgx.Row
+		query = queryInsertUser()
+	)
+	args := pgx.NamedArgs{
+		"email":      user.Email,
+		"privateKey": user.PrivateKey,
 	}
-	return nil, errors.New("not found")
+	row = s.db.QueryRow(ctx, query, args)
+	err = row.Scan(&resp.ID, &resp.Email, &resp.PrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
 }

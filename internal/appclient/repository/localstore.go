@@ -12,19 +12,18 @@ import (
 type localStore interface {
 	Size() int64
 	LastSync() string
-	GetUserByEmail(ctx context.Context, email string) (*core.User, error)
-	AddUser(ctx context.Context, user *core.User) (*core.User, error)
-	ChangeUser(ctx context.Context, user *core.User) (*core.User, error)
-	ResetUserData(ctx context.Context, types ...core.DataType) error
+
 	GetData(ctx context.Context, userID string, types ...string) ([]*core.ManagerData, error)
-	GetAccessData(ctx context.Context) (*core.ManagerData, error)
-	SearchData(ctx context.Context, search, userID string, types ...string) ([]*core.ManagerData, error)
+
 	AddData(ctx context.Context, data ...*core.ManagerData) ([]*core.ManagerData, error)
 	ChangeData(ctx context.Context, data ...*core.ManagerData) (int, error)
-	Close() error
+
+	GetAccessData(ctx context.Context) (*core.ManagerData, error)
+	ResetUserData(ctx context.Context, types ...core.DataType) error
 	AddTryPasword(ctx context.Context, data *core.ManagerData) error
 	GetTryPasword(ctx context.Context) (*core.ManagerData, error)
 	AddAccessData(ctx context.Context, data *core.ManagerData) error
+	Close() error
 }
 
 type Local interface {

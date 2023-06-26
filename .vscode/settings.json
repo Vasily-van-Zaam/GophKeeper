@@ -1,0 +1,10 @@
+{
+    "go.inferGopath": false,
+    "go.lintFlags": [
+        "--fast",
+        "--fix",
+        "-c",
+        "/Users/vasiliyvan-zaam/Desktop/PROJECTS/.golangci.yml",
+        //  "/home/van-zaam/Desktop/Projects/.golangci.yml"
+    ],
+}
